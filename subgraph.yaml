@@ -1,0 +1,56 @@
+specVersion: 0.0.1
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: LiquidityPool
+    network: goerli
+    source:
+      address: "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+      abi: LiquidityPool
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.5
+      language: wasm/assemblyscript
+      entities:
+        - AssetSent
+        - Deposit
+        - EthReceived
+        - FeeDetails
+        - GasFeeWithdraw
+        - LiquidityProvidersChanged
+        - OwnershipTransferred
+        - Paused
+        - PauserChanged
+        - Received
+        - TrustedForwarderChanged
+        - Unpaused
+      abis:
+        - name: LiquidityPool
+          file: ./abis/LiquidityPool.json
+      eventHandlers:
+        - event: AssetSent(indexed address,indexed uint256,indexed uint256,address,bytes,uint256)
+          handler: handleAssetSent
+        - event: Deposit(indexed address,indexed address,indexed address,uint256,uint256,uint256,string)
+          handler: handleDeposit
+        - event: EthReceived(address,uint256)
+          handler: handleEthReceived
+        - event: FeeDetails(indexed uint256,indexed uint256,indexed uint256)
+          handler: handleFeeDetails
+        - event: GasFeeWithdraw(indexed address,indexed address,indexed uint256)
+          handler: handleGasFeeWithdraw
+        - event: LiquidityProvidersChanged(indexed address)
+          handler: handleLiquidityProvidersChanged
+        - event: OwnershipTransferred(indexed address,indexed address)
+          handler: handleOwnershipTransferred
+        - event: Paused(address)
+          handler: handlePaused
+        - event: PauserChanged(indexed address,indexed address)
+          handler: handlePauserChanged
+        - event: Received(indexed address,indexed uint256)
+          handler: handleReceived
+        - event: TrustedForwarderChanged(indexed address)
+          handler: handleTrustedForwarderChanged
+        - event: Unpaused(address)
+          handler: handleUnpaused
+      file: ./src/mapping.ts
