@@ -4,11 +4,11 @@ schema:
 dataSources:
   - kind: ethereum
     name: LiquidityPool
-    network: mumbai
+    network: {{network}}
     source:
-      address: "0x5a63a7Eb13C121cCeF718b28d7e75C68E455a25c"
+      address: "{{address}}"
       abi: LiquidityPool
-      startBlock: 25329437
+      startBlock: {{startBlock}}
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.5

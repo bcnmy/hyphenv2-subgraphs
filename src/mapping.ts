@@ -1,4 +1,4 @@
-import { BigInt } from "@graphprotocol/graph-ts"
+import { BigInt, log } from "@graphprotocol/graph-ts"
 import {
   LiquidityPool,
   AssetSent,
@@ -14,87 +14,360 @@ import {
   TrustedForwarderChanged,
   Unpaused
 } from "../generated/LiquidityPool/LiquidityPool"
-import { ExampleEntity } from "../generated/schema"
 
-export function handleAssetSent(event: AssetSent): void {
-  // Entities can be loaded from the store using a string ID; this ID
-  // needs to be unique across all entities of the same type
-  let entity = ExampleEntity.load(event.transaction.from.toHex())
+import {
+  Deposit as DepositEntity,
+  DailyDepositVolume,
+  DepositVolumeCumulative,
+  RollingDepositVolumeForLast24Hour,
+  RollingDepositVolumeForLast24HourPerChainAndToken,
+  FeeDetailLogEntry,
+  FeeCumulative,
+  DailyFeeDetailsLog,
+  RollingFeeDetailsLogsForLast24Hour,
+  UniqueWallet,
+  UniqueWalletCount,
+  DepositVolumeCumulativePerChainAndToken,
+  DailyDepositVolumePerChainAndToken
+} from "../generated/schema"
 
-  // Entities only exist after they have been saved to the store;
-  // `null` checks allow to create entities on demand
-  if (!entity) {
-    entity = new ExampleEntity(event.transaction.from.toHex())
+export function handleDeposit(event: Deposit): void {
+  const deposit = new DepositEntity(event.transaction.hash.toHex());
+  deposit.sender = event.params.from;
+  deposit.tokenAddress = event.params.tokenAddress;
+  deposit.receiver = event.params.receiver;
+  deposit.toChainID = event.params.toChainId;
+  deposit.rewardAmount = event.params.reward;
+  deposit.amount = event.params.amount;
+  deposit.tag = event.params.tag;
+  deposit.timestamp = event.block.timestamp;
 
-    // Entity fields can be set using simple assignments
-    entity.count = BigInt.fromI32(0)
+  log.info("Sender:", [deposit.sender.toHexString()]);
+  log.info("Token Address:", [deposit.tokenAddress.toHexString()]);
+  log.info("Receiver:", [deposit.receiver.toHexString()]);
+  log.info("toChainid:", [deposit.toChainID.toString()]);
+  log.info("RewardAmount:", [deposit.rewardAmount.toString()]);
+  log.info("Amount:", [deposit.amount.toString()]);
+  log.info("tag:", [deposit.tag.toString()]);
+
+  let depositVolumeCumulative = DepositVolumeCumulative.load("0");
+  if (!depositVolumeCumulative) {
+    depositVolumeCumulative = new DepositVolumeCumulative("0");
+    depositVolumeCumulative.cumulativeRewardAmount = BigInt.fromI32(0);
+    depositVolumeCumulative.cumulativeAmount = BigInt.fromI32(0);
   }
 
-  // BigInt and BigDecimal math are supported
-  entity.count = entity.count + BigInt.fromI32(1)
+  depositVolumeCumulative.cumulativeRewardAmount += deposit.rewardAmount;
+  depositVolumeCumulative.cumulativeAmount += deposit.amount;
+  depositVolumeCumulative.save();
 
-  // Entity fields can be set based on event parameters
-  entity.asset = event.params.asset
-  entity.amount = event.params.amount
+  let depositVolumeCumulativePerChainAndToken = DepositVolumeCumulativePerChainAndToken.load(`${deposit.toChainID.toString()}-${deposit.tokenAddress.toHexString()}`);
+  if (!depositVolumeCumulativePerChainAndToken) {
+    depositVolumeCumulativePerChainAndToken = new DepositVolumeCumulativePerChainAndToken(`${deposit.toChainID.toString()}-${deposit.tokenAddress.toHexString()}`);
+    depositVolumeCumulativePerChainAndToken.cumulativeAmount = BigInt.fromI32(0);
+    depositVolumeCumulativePerChainAndToken.cumulativeRewardAmount = BigInt.fromI32(0);
+    depositVolumeCumulativePerChainAndToken.tokenAddress = deposit.tokenAddress;
+    depositVolumeCumulativePerChainAndToken.toChainID = deposit.toChainID;
+  }
 
-  // Entities can be written to the store with `.save()`
-  entity.save()
+  depositVolumeCumulativePerChainAndToken.cumulativeAmount += deposit.amount;
+  depositVolumeCumulativePerChainAndToken.cumulativeRewardAmount += deposit.rewardAmount;
 
-  // Note: If a handler doesn't require existing field values, it is faster
-  // _not_ to load the entity from the store. Instead, create it fresh with
-  // `new Entity(...)`, set the fields that should be updated and save the
-  // entity back to the store. Fields that were not set or unset remain
-  // unchanged, allowing for partial updates to be applied.
+  depositVolumeCumulativePerChainAndToken.save();
 
-  // It is also possible to access smart contracts from mappings. For
-  // example, the contract that has emitted the event can be connected to
-  // with:
-  //
-  // let contract = Contract.bind(event.address)
-  //
-  // The following functions can then be called on this contract to access
-  // state variables and other data:
-  //
-  // - contract.baseGas(...)
-  // - contract.checkHashStatus(...)
-  // - contract.gasFeeAccumulated(...)
-  // - contract.gasFeeAccumulatedByToken(...)
-  // - contract.getCurrentLiquidity(...)
-  // - contract.getExecutorManager(...)
-  // - contract.getRewardAmount(...)
-  // - contract.getTransferFee(...)
-  // - contract.incentivePool(...)
-  // - contract.isPauser(...)
-  // - contract.isTrustedForwarder(...)
-  // - contract.liquidityProviders(...)
-  // - contract.owner(...)
-  // - contract.paused(...)
-  // - contract.processedHash(...)
-  // - contract.tokenManager(...)
+
+  let slidingWindow = RollingDepositVolumeForLast24Hour.load("0");
+
+  if (!slidingWindow) {
+    slidingWindow = new RollingDepositVolumeForLast24Hour("0");
+    slidingWindow.cumulativeRewardAmount = BigInt.fromI32(0);
+    slidingWindow.cumulativeAmount = BigInt.fromI32(0);
+  }
+
+  // add the current feeDetailLogEntry to the sliding window
+  deposit.rollingWindow = slidingWindow.id;
+
+  // add the current feeDetailLogEntry to the cumulative values
+  slidingWindow.cumulativeRewardAmount += deposit.rewardAmount;
+  slidingWindow.cumulativeAmount += deposit.amount;
+
+  let slidingWindowPerChainAndToken = RollingDepositVolumeForLast24HourPerChainAndToken.load(`${deposit.toChainID.toString()}-${deposit.tokenAddress.toHexString()}`);
+
+  if (!slidingWindowPerChainAndToken) {
+    slidingWindowPerChainAndToken = new RollingDepositVolumeForLast24HourPerChainAndToken(`${deposit.toChainID.toString()}-${deposit.tokenAddress.toHexString()}`);
+    slidingWindowPerChainAndToken.toChainID = deposit.toChainID;
+    slidingWindowPerChainAndToken.tokenAddress = deposit.tokenAddress;
+    slidingWindowPerChainAndToken.cumulativeRewardAmount = BigInt.fromI32(0);
+    slidingWindowPerChainAndToken.cumulativeAmount = BigInt.fromI32(0);
+  }
+
+  slidingWindowPerChainAndToken.cumulativeRewardAmount += deposit.rewardAmount;;
+  slidingWindowPerChainAndToken.cumulativeAmount += deposit.amount;
+  slidingWindowPerChainAndToken.save();
+
+  deposit.rollingWindowPerChainAndToken = slidingWindowPerChainAndToken.id;
+
+  let oldDeposits = slidingWindow.deposits;
+  if (oldDeposits !== null) {
+    // sliding window calculation
+    for (let i = 0; i < oldDeposits.length; i++) {
+      // for every feeDetailLogEntry in the rolling window, check if they are old enough to remove
+      // if so, then remove and also decrease their values from cumulative rolling window values
+      let oldDeposit = DepositEntity.load(oldDeposits[i]);
+      if (!oldDeposit) continue;
+      if (deposit.timestamp.minus(oldDeposit.timestamp) > BigInt.fromI32(86400)) {
+        oldDeposit.rollingWindow = null;
+        oldDeposit.save();
+        slidingWindow.cumulativeRewardAmount = slidingWindow.cumulativeRewardAmount.minus(oldDeposit.rewardAmount);
+        slidingWindow.cumulativeAmount = slidingWindow.cumulativeAmount.minus(oldDeposit.amount);
+
+      }
+    }
+  }
+  slidingWindow.save();
+
+  let oldDepositsPerChainAndToken = slidingWindowPerChainAndToken.deposits;
+  if (oldDepositsPerChainAndToken !== null) {
+    for (let i = 0; i < oldDepositsPerChainAndToken.length; i++) {
+      let oldDepositPerChainAndToken = DepositEntity.load(oldDepositsPerChainAndToken[i]);
+      if (!oldDepositPerChainAndToken) continue;
+      if (deposit.timestamp.minus(oldDepositPerChainAndToken.timestamp) > BigInt.fromI32(86400)) {
+        oldDepositPerChainAndToken.rollingWindowPerChainAndToken = null;
+        oldDepositPerChainAndToken.save();
+        slidingWindowPerChainAndToken.cumulativeRewardAmount = slidingWindowPerChainAndToken.cumulativeRewardAmount.minus(oldDepositPerChainAndToken.rewardAmount);
+        slidingWindowPerChainAndToken.cumulativeRewardAmount = slidingWindowPerChainAndToken.cumulativeAmount.minus(oldDepositPerChainAndToken.amount);
+      }
+    }
+  }
+  slidingWindowPerChainAndToken.save();
+
+  const epochModSecondsInADay = deposit.timestamp.mod(BigInt.fromI32(86400));
+  const dayEpoch = deposit.timestamp.minus(epochModSecondsInADay);
+
+  let todayDepositVolume = DailyDepositVolume.load(dayEpoch.toString());
+
+  if (!todayDepositVolume) {
+    todayDepositVolume = new DailyDepositVolume(dayEpoch.toString());
+    todayDepositVolume.cumulativeRewardAmount = BigInt.fromI32(0);
+    todayDepositVolume.cumulativeAmount = BigInt.fromI32(0);
+  }
+
+  let todayDepositVolumePerChainAndToken = DailyDepositVolumePerChainAndToken.load(`${dayEpoch.toString()}-${deposit.toChainID.toString()}-${deposit.tokenAddress.toHexString()}`);
+  if (!todayDepositVolumePerChainAndToken) {
+    todayDepositVolumePerChainAndToken = new DailyDepositVolumePerChainAndToken(`${dayEpoch.toString()}-${deposit.toChainID.toString()}-${deposit.tokenAddress.toHexString()}`);
+    todayDepositVolumePerChainAndToken.cumulativeAmount = BigInt.fromI32(0);
+    todayDepositVolumePerChainAndToken.cumulativeRewardAmount = BigInt.fromI32(0);
+    todayDepositVolumePerChainAndToken.toChainID = deposit.toChainID;
+    todayDepositVolumePerChainAndToken.tokenAddress = deposit.tokenAddress;
+  }
+
+  todayDepositVolumePerChainAndToken.cumulativeRewardAmount += deposit.rewardAmount;
+  todayDepositVolumePerChainAndToken.cumulativeAmount += deposit.amount;
+
+  log.info("Today deposit epoch {}", [todayDepositVolume.id]);
+
+  todayDepositVolume.cumulativeRewardAmount += deposit.rewardAmount;
+  todayDepositVolume.cumulativeAmount += deposit.amount;
+
+  deposit.dailyWindow = todayDepositVolume.id;
+  deposit.dailyWindowPerChainAndToken = todayDepositVolumePerChainAndToken.id;
+  deposit.save();
+  todayDepositVolume.save();
+  todayDepositVolumePerChainAndToken.save();
+
+
+  let uniqueWallet = UniqueWallet.load(event.params.from.toHex());
+  log.info('hexString: {}', [event.params.from.toHexString()]);
+
+  if (uniqueWallet == null) {
+    let uniqueWalletCount = UniqueWalletCount.load('1')
+
+    if (uniqueWalletCount == null) {
+      uniqueWalletCount = new UniqueWalletCount('1')
+      uniqueWalletCount.count = BigInt.fromI32(0)
+    }
+
+    let uniqueWalletCountPerToken = UniqueWalletCount.load(event.params.tokenAddress.toHexString())
+
+    if (uniqueWalletCountPerToken == null) {
+      uniqueWalletCountPerToken = new UniqueWalletCount(event.params.tokenAddress.toHexString())
+      uniqueWalletCountPerToken.count = BigInt.fromI32(0)
+    }
+
+    uniqueWallet = new UniqueWallet(event.params.from.toHexString())
+    uniqueWallet.count = BigInt.fromI32(0)
+
+    uniqueWalletCount.count = (uniqueWalletCount.count).plus(BigInt.fromI32(1));
+
+    uniqueWalletCountPerToken.count = (uniqueWalletCountPerToken.count).plus(BigInt.fromI32(1));
+
+    uniqueWalletCount.save()
+    uniqueWalletCountPerToken.save()
+  }
+
+  uniqueWallet.count = (uniqueWallet.count).plus(BigInt.fromI32(1));
+
+  uniqueWallet.save()
 }
 
-export function handleDeposit(event: Deposit): void {}
+// export function handleEthReceived(event: EthReceived): void { }
 
-export function handleEthReceived(event: EthReceived): void {}
+export function handleFeeDetails(event: FeeDetails): void {
 
-export function handleFeeDetails(event: FeeDetails): void {}
+  log.info("Inside Fee Details:", ["Feels good"]);
+  // FeeDetail is the fundamental entity
+  const feeDetailLogEntry = new FeeDetailLogEntry(event.transaction.hash.toHex());
+  feeDetailLogEntry.timestamp = event.block.timestamp;
+  feeDetailLogEntry.transferFee = event.params.transferFee;
+  feeDetailLogEntry.lpFee = event.params.lpFee;
+  feeDetailLogEntry.gasFee = event.params.gasFee;
+  log.info("Fee Detail log entry populated", ["Feels good"]);
 
-export function handleGasFeeWithdraw(event: GasFeeWithdraw): void {}
 
-export function handleLiquidityProvidersChanged(
-  event: LiquidityProvidersChanged
-): void {}
+  // log.info("tran:", [deposit.sender.toHexString()]);
+  // log.info("Token Address:", [deposit.tokenAddress.toHexString()]);
+  // log.info("Receiver:", [deposit.receiver.toHexString()]);
+  // log.info("toChainid:", [deposit.toChainID.toString()]);
+  // log.info("RewardAmount:", [deposit.rewardAmount.toString()]);
+  // log.info("Amount:", [deposit.amount.toString()]);
+  // log.info("tag:", [deposit.tag.toString()]);
 
-export function handleOwnershipTransferred(event: OwnershipTransferred): void {}
+  // FeeCumulative is the cumulative all time data
+  let feeCumulative = FeeCumulative.load("0");
 
-export function handlePaused(event: Paused): void {}
+  if (!feeCumulative) {
+    feeCumulative = new FeeCumulative("0");
+    feeCumulative.lpFee = BigInt.fromI32(0);
+    feeCumulative.gasFee = BigInt.fromI32(0);
+    feeCumulative.transferFee = BigInt.fromI32(0);
+  }
 
-export function handlePauserChanged(event: PauserChanged): void {}
+  feeCumulative.lpFee = feeCumulative.lpFee.plus(feeDetailLogEntry.lpFee);
+  feeCumulative.gasFee = feeCumulative.gasFee.plus(feeDetailLogEntry.gasFee);
+  feeCumulative.transferFee = feeCumulative.transferFee.plus(feeDetailLogEntry.transferFee);
 
-export function handleReceived(event: Received): void {}
+  feeCumulative.save();
 
-export function handleTrustedForwarderChanged(
-  event: TrustedForwarderChanged
-): void {}
+  log.info("Fee Cumulative saved", ["Feels good"]);
 
-export function handleUnpaused(event: Unpaused): void {}
+
+  // RollingFeeDetailsLogsForLast24Hour only captures data for the last 24 hours, counting from the last event
+  let slidingWindow = RollingFeeDetailsLogsForLast24Hour.load("0");
+
+  if (!slidingWindow) {
+    slidingWindow = new RollingFeeDetailsLogsForLast24Hour("0");
+    slidingWindow.cumulativeGasFee = BigInt.fromI32(0);
+    slidingWindow.cumulativeLpFee = BigInt.fromI32(0);
+    slidingWindow.cumulativeTransferFee = BigInt.fromI32(0);
+  }
+
+  // add the current feeDetailLogEntry to the sliding window
+  feeDetailLogEntry.rollingWindow = slidingWindow.id;
+
+  // add the current feeDetailLogEntry to the cumulative values
+  slidingWindow.cumulativeGasFee += feeDetailLogEntry.gasFee;
+  slidingWindow.cumulativeLpFee += feeDetailLogEntry.lpFee;
+  slidingWindow.cumulativeTransferFee += feeDetailLogEntry.transferFee;
+
+  log.info("Sliding window added values {} {} {}",
+    [slidingWindow.cumulativeGasFee.toString(),
+    slidingWindow.cumulativeLpFee.toString(),
+    slidingWindow.cumulativeTransferFee.toString()]
+  );
+
+  //let oldLogs = slidingWindow.logs;
+  log.info("assigned old logs", []);
+
+  // if (slidingWindow.logs !== null) {
+  //   log.info("Inside if", []);
+  //   // sliding window calculation
+  //   let x = slidingWindow.logs.length;
+
+  //   for (let i = 0; i < x; i++) {
+  //     log.info("For loop fee iteration", [i.toString()]);
+  //     // for every feeDetailLogEntry in the rolling window, check if they are old enough to remove
+  //     // if so, then remove and also decrease their values from cumulative rolling window values
+  //     if (slidingWindow.logs[i] === null) continue;
+  //     let oldLog = FeeDetailLogEntry.load(slidingWindow.logs[i]);
+  //     if (!oldLog) continue;
+  //     if (feeDetailLogEntry.timestamp.minus(oldLog.timestamp) > BigInt.fromI32(86400)) {
+  //       oldLog.rollingWindow = null;
+  //       slidingWindow.cumulativeGasFee = slidingWindow.cumulativeGasFee.minus(oldLog.gasFee);
+  //       slidingWindow.cumulativeLpFee = slidingWindow.cumulativeLpFee.minus(oldLog.lpFee);
+  //       slidingWindow.cumulativeTransferFee = slidingWindow.cumulativeTransferFee.minus(oldLog.transferFee);
+  //     }
+  //   }
+  // } else {
+  //   log.info("Inside else", []);
+  // }
+
+  let oldFees = slidingWindow.logs;
+  if (oldFees !== null) {
+    // sliding window calculation
+    for (let i = 0; i < oldFees.length; i++) {
+      // for every feeDetailLogEntry in the rolling window, check if they are old enough to remove
+      // if so, then remove and also decrease their values from cumulative rolling window values
+      let oldFee = FeeDetailLogEntry.load(oldFees[i]);
+      if (!oldFee) continue;
+      if (feeDetailLogEntry.timestamp.minus(oldFee.timestamp) > BigInt.fromI32(86400)) {
+        oldFee.rollingWindow = null;
+        oldFee.save();
+        slidingWindow.cumulativeGasFee = slidingWindow.cumulativeGasFee.minus(oldFee.gasFee);
+        slidingWindow.cumulativeLpFee = slidingWindow.cumulativeLpFee.minus(oldFee.lpFee);
+        slidingWindow.cumulativeTransferFee = slidingWindow.cumulativeTransferFee.minus(oldFee.transferFee);
+
+      }
+    }
+  }
+
+  log.info("skipped", []);
+
+  slidingWindow.save();
+  log.info("Sliding window saved", ["Feels good"]);
+
+  const epochModSecondsInADay = feeDetailLogEntry.timestamp.mod(BigInt.fromI32(86400));
+
+  log.info("Day epoch {}", [epochModSecondsInADay.toString()]);
+
+  const dayEpoch = feeDetailLogEntry.timestamp.minus(epochModSecondsInADay);
+
+  let todayFeeDetailsLog = DailyFeeDetailsLog.load(dayEpoch.toString());
+
+  if (!todayFeeDetailsLog) {
+    todayFeeDetailsLog = new DailyFeeDetailsLog(dayEpoch.toString());
+    todayFeeDetailsLog.cumulativeGasFee = BigInt.fromI32(0);
+    todayFeeDetailsLog.cumulativeLpFee = BigInt.fromI32(0);
+    todayFeeDetailsLog.cumulativeTransferFee = BigInt.fromI32(0);
+  }
+
+  todayFeeDetailsLog.cumulativeGasFee = todayFeeDetailsLog.cumulativeGasFee.plus(feeDetailLogEntry.gasFee);
+  todayFeeDetailsLog.cumulativeLpFee = todayFeeDetailsLog.cumulativeLpFee.plus(feeDetailLogEntry.lpFee);
+  todayFeeDetailsLog.cumulativeTransferFee = todayFeeDetailsLog.cumulativeTransferFee.plus(feeDetailLogEntry.transferFee);
+
+  feeDetailLogEntry.dailyWindow = todayFeeDetailsLog.id;
+  feeDetailLogEntry.save();
+  log.info("fee detail log entry saved", ["Feels good"]);
+  todayFeeDetailsLog.save();
+  log.info("today fee saved", ["Feels good"]);
+
+}
+
+// export function handleGasFeeWithdraw(event: GasFeeWithdraw): void { }
+
+// export function handleLiquidityProvidersChanged(
+//   event: LiquidityProvidersChanged
+// ): void { }
+
+// export function handleOwnershipTransferred(event: OwnershipTransferred): void { }
+
+// export function handlePaused(event: Paused): void { }
+
+// export function handlePauserChanged(event: PauserChanged): void { }
+
+// export function handleReceived(event: Received): void { }
+
+// export function handleTrustedForwarderChanged(
+//   event: TrustedForwarderChanged
+// ): void { }
+
+// export function handleUnpaused(event: Unpaused): void { }
