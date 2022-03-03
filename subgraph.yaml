@@ -4,11 +4,11 @@ schema:
 dataSources:
   - kind: ethereum
     name: LiquidityPool
-    network: goerli
+    network: mumbai
     source:
-      address: "0xca6f716E732593e34aAE7a2E0a2775aFB5D5C088"
+      address: "0xFFe2aB07484f91a9E48a71F7Cd9a8C9E6911eB56"
       abi: LiquidityPool
-      startBlock: 6432173
+      startBlock: 25329437
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.5
@@ -57,9 +57,9 @@ dataSources:
       file: ./src/mapping.ts
   - kind: ethereum
     name: LiquidityProviders
-    network: goerli
+    network: mumbai
     source:
-      address: "0xE0875Ee87aD154Ec7C0a2e8957B5476c1bece495"
+      address: "0x9a0D29104729a46334618c5c93B995d6F76Bfd7c"
       abi: LiquidityProviders
       startBlock: 6432173
     mapping:

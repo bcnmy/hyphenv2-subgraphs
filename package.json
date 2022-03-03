@@ -6,11 +6,13 @@
     "build": "graph build",
     "deploy:goerli": "graph deploy --node https://api.thegraph.com/deploy/ shantanu-bico/hyphenv2-liquidity-pool-goerli",
     "deploy:mumbai": "graph deploy --node https://api.thegraph.com/deploy/ shantanu-bico/hyphenv2-liquidity-pool-mumbai",
+    "deploy:fuji":  "graph deploy --node https://api.thegraph.com/deploy/ shantanu-bico/hyphenv2-liquidity-pool-fuji",
     "create-local": "graph create --node http://localhost:8020/ shantanu-bico/hyphen-v2-liquidity-pool",
     "remove-local": "graph remove --node http://localhost:8020/ shantanu-bico/hyphen-v2-liquidity-pool",
     "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 shantanu-bico/hyphen-v2-liquidity-pool",
     "prepare:goerli": "mustache config/ethereum-goerli.json subgraph.template.yaml > subgraph.yaml",
-    "prepare:mumbai": "mustache config/polygon-mumbai.json subgraph.template.yaml > subgraph.yaml"
+    "prepare:mumbai": "mustache config/polygon-mumbai.json subgraph.template.yaml > subgraph.yaml",
+    "prepare:fuji": "mustache config/avalanche-fuji.json subgraph.template.yaml > subgraph.yaml"
   },
   "dependencies": {
     "@graphprotocol/graph-cli": "0.26.0",

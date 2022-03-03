@@ -1,5 +1,6 @@
 {
-  "address": "0xB68820b07265F2FAc6154b46588B9339Ef4912ac",
+  "liquidityPoolContractAddress": "0xFFe2aB07484f91a9E48a71F7Cd9a8C9E6911eB56",
+  "liquidityProvidersContractAddress": "0x9a0D29104729a46334618c5c93B995d6F76Bfd7c",
   "network": "mumbai",
   "startBlock": 25329437
 }
