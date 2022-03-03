@@ -1,5 +1,6 @@
 {
-    "address": "0xca6f716E732593e34aAE7a2E0a2775aFB5D5C088",
-    "network": "goerli",
-    "startBlock": 6432173
+  "liquidityPoolContractAddress": "0x55EA70A11E7AcE4C21225Fb84aDA36467622f6d7",
+  "liquidityProvidersContractAddress": "0x16E6f52B5e01Ad29DB03f1A374a984fb8Ea8Ed40",
+  "network": "goerli",
+  "startBlock": 6432173
 }
