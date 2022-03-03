@@ -55,10 +55,12 @@ export function handleDeposit(event: Deposit): void {
     depositVolumeCumulative = new DepositVolumeCumulative("0");
     depositVolumeCumulative.cumulativeRewardAmount = BigInt.fromI32(0);
     depositVolumeCumulative.cumulativeAmount = BigInt.fromI32(0);
+    depositVolumeCumulative.count = BigInt.fromI32(0);
   }
 
   depositVolumeCumulative.cumulativeRewardAmount += deposit.rewardAmount;
   depositVolumeCumulative.cumulativeAmount += deposit.amount;
+  depositVolumeCumulative.count += BigInt.fromI32(1);
   depositVolumeCumulative.save();
 
   let depositVolumeCumulativePerChainAndToken = DepositVolumeCumulativePerChainAndToken.load(`${deposit.toChainID.toString()}-${deposit.tokenAddress.toHexString()}`);
@@ -68,10 +70,12 @@ export function handleDeposit(event: Deposit): void {
     depositVolumeCumulativePerChainAndToken.cumulativeRewardAmount = BigInt.fromI32(0);
     depositVolumeCumulativePerChainAndToken.tokenAddress = deposit.tokenAddress;
     depositVolumeCumulativePerChainAndToken.toChainID = deposit.toChainID;
+    depositVolumeCumulativePerChainAndToken.count = BigInt.fromI32(0);
   }
 
   depositVolumeCumulativePerChainAndToken.cumulativeAmount += deposit.amount;
   depositVolumeCumulativePerChainAndToken.cumulativeRewardAmount += deposit.rewardAmount;
+  depositVolumeCumulativePerChainAndToken.count += BigInt.fromI32(1);
 
   depositVolumeCumulativePerChainAndToken.save();
 
@@ -82,6 +86,7 @@ export function handleDeposit(event: Deposit): void {
     slidingWindow = new RollingDepositVolumeForLast24Hour("0");
     slidingWindow.cumulativeRewardAmount = BigInt.fromI32(0);
     slidingWindow.cumulativeAmount = BigInt.fromI32(0);
+    slidingWindow.count = BigInt.fromI32(0);
   }
 
   // add the current feeDetailLogEntry to the sliding window
@@ -90,6 +95,7 @@ export function handleDeposit(event: Deposit): void {
   // add the current feeDetailLogEntry to the cumulative values
   slidingWindow.cumulativeRewardAmount += deposit.rewardAmount;
   slidingWindow.cumulativeAmount += deposit.amount;
+  slidingWindow.count += BigInt.fromI32(1);
 
   let slidingWindowPerChainAndToken = RollingDepositVolumeForLast24HourPerChainAndToken.load(`${deposit.toChainID.toString()}-${deposit.tokenAddress.toHexString()}`);
 
@@ -99,10 +105,12 @@ export function handleDeposit(event: Deposit): void {
     slidingWindowPerChainAndToken.tokenAddress = deposit.tokenAddress;
     slidingWindowPerChainAndToken.cumulativeRewardAmount = BigInt.fromI32(0);
     slidingWindowPerChainAndToken.cumulativeAmount = BigInt.fromI32(0);
+    slidingWindowPerChainAndToken.count = BigInt.fromI32(0);
   }
 
   slidingWindowPerChainAndToken.cumulativeRewardAmount += deposit.rewardAmount;;
   slidingWindowPerChainAndToken.cumulativeAmount += deposit.amount;
+  slidingWindowPerChainAndToken.count += BigInt.fromI32(1);
   slidingWindowPerChainAndToken.save();
 
   deposit.rollingWindowPerChainAndToken = slidingWindowPerChainAndToken.id;
@@ -120,7 +128,7 @@ export function handleDeposit(event: Deposit): void {
         oldDeposit.save();
         slidingWindow.cumulativeRewardAmount = slidingWindow.cumulativeRewardAmount.minus(oldDeposit.rewardAmount);
         slidingWindow.cumulativeAmount = slidingWindow.cumulativeAmount.minus(oldDeposit.amount);
-
+        slidingWindow.count -= BigInt.fromI32(1);
       }
     }
   }
@@ -135,7 +143,9 @@ export function handleDeposit(event: Deposit): void {
         oldDepositPerChainAndToken.rollingWindowPerChainAndToken = null;
         oldDepositPerChainAndToken.save();
         slidingWindowPerChainAndToken.cumulativeRewardAmount = slidingWindowPerChainAndToken.cumulativeRewardAmount.minus(oldDepositPerChainAndToken.rewardAmount);
-        slidingWindowPerChainAndToken.cumulativeRewardAmount = slidingWindowPerChainAndToken.cumulativeAmount.minus(oldDepositPerChainAndToken.amount);
+        slidingWindowPerChainAndToken.cumulativeAmount = slidingWindowPerChainAndToken.cumulativeAmount.minus(oldDepositPerChainAndToken.amount);
+        slidingWindowPerChainAndToken.count -= BigInt.fromI32(1);
+
       }
     }
   }
@@ -150,6 +160,8 @@ export function handleDeposit(event: Deposit): void {
     todayDepositVolume = new DailyDepositVolume(dayEpoch.toString());
     todayDepositVolume.cumulativeRewardAmount = BigInt.fromI32(0);
     todayDepositVolume.cumulativeAmount = BigInt.fromI32(0);
+    todayDepositVolume.count = BigInt.fromI32(0);
+    todayDepositVolume.timestamp = dayEpoch;
   }
 
   let todayDepositVolumePerChainAndToken = DailyDepositVolumePerChainAndToken.load(`${dayEpoch.toString()}-${deposit.toChainID.toString()}-${deposit.tokenAddress.toHexString()}`);
@@ -159,15 +171,21 @@ export function handleDeposit(event: Deposit): void {
     todayDepositVolumePerChainAndToken.cumulativeRewardAmount = BigInt.fromI32(0);
     todayDepositVolumePerChainAndToken.toChainID = deposit.toChainID;
     todayDepositVolumePerChainAndToken.tokenAddress = deposit.tokenAddress;
+    todayDepositVolumePerChainAndToken.count = BigInt.fromI32(0);
+    todayDepositVolumePerChainAndToken.timestamp = dayEpoch;
   }
 
   todayDepositVolumePerChainAndToken.cumulativeRewardAmount += deposit.rewardAmount;
   todayDepositVolumePerChainAndToken.cumulativeAmount += deposit.amount;
+  todayDepositVolumePerChainAndToken.count += BigInt.fromI32(1);
+
 
   log.info("Today deposit epoch {}", [todayDepositVolume.id]);
 
   todayDepositVolume.cumulativeRewardAmount += deposit.rewardAmount;
   todayDepositVolume.cumulativeAmount += deposit.amount;
+  todayDepositVolume.count += BigInt.fromI32(1);
+
 
   deposit.dailyWindow = todayDepositVolume.id;
   deposit.dailyWindowPerChainAndToken = todayDepositVolumePerChainAndToken.id;
@@ -180,10 +198,10 @@ export function handleDeposit(event: Deposit): void {
   log.info('hexString: {}', [event.params.from.toHexString()]);
 
   if (uniqueWallet == null) {
-    let uniqueWalletCount = UniqueWalletCount.load('1')
+    let uniqueWalletCount = UniqueWalletCount.load('0')
 
     if (uniqueWalletCount == null) {
-      uniqueWalletCount = new UniqueWalletCount('1')
+      uniqueWalletCount = new UniqueWalletCount('0')
       uniqueWalletCount.count = BigInt.fromI32(0)
     }
 
@@ -206,7 +224,6 @@ export function handleDeposit(event: Deposit): void {
   }
 
   uniqueWallet.count = (uniqueWallet.count).plus(BigInt.fromI32(1));
-
   uniqueWallet.save()
 }
 
@@ -240,11 +257,13 @@ export function handleFeeDetails(event: FeeDetails): void {
     feeCumulative.lpFee = BigInt.fromI32(0);
     feeCumulative.gasFee = BigInt.fromI32(0);
     feeCumulative.transferFee = BigInt.fromI32(0);
+    feeCumulative.count = BigInt.fromI32(0);
   }
 
   feeCumulative.lpFee = feeCumulative.lpFee.plus(feeDetailLogEntry.lpFee);
   feeCumulative.gasFee = feeCumulative.gasFee.plus(feeDetailLogEntry.gasFee);
   feeCumulative.transferFee = feeCumulative.transferFee.plus(feeDetailLogEntry.transferFee);
+  feeCumulative.count += BigInt.fromI32(1);
 
   feeCumulative.save();
 
@@ -259,6 +278,7 @@ export function handleFeeDetails(event: FeeDetails): void {
     slidingWindow.cumulativeGasFee = BigInt.fromI32(0);
     slidingWindow.cumulativeLpFee = BigInt.fromI32(0);
     slidingWindow.cumulativeTransferFee = BigInt.fromI32(0);
+    slidingWindow.count = BigInt.fromI32(0);
   }
 
   // add the current feeDetailLogEntry to the sliding window
@@ -268,6 +288,7 @@ export function handleFeeDetails(event: FeeDetails): void {
   slidingWindow.cumulativeGasFee += feeDetailLogEntry.gasFee;
   slidingWindow.cumulativeLpFee += feeDetailLogEntry.lpFee;
   slidingWindow.cumulativeTransferFee += feeDetailLogEntry.transferFee;
+  slidingWindow.count += BigInt.fromI32(1);
 
   log.info("Sliding window added values {} {} {}",
     [slidingWindow.cumulativeGasFee.toString(),
@@ -277,29 +298,6 @@ export function handleFeeDetails(event: FeeDetails): void {
 
   //let oldLogs = slidingWindow.logs;
   log.info("assigned old logs", []);
-
-  // if (slidingWindow.logs !== null) {
-  //   log.info("Inside if", []);
-  //   // sliding window calculation
-  //   let x = slidingWindow.logs.length;
-
-  //   for (let i = 0; i < x; i++) {
-  //     log.info("For loop fee iteration", [i.toString()]);
-  //     // for every feeDetailLogEntry in the rolling window, check if they are old enough to remove
-  //     // if so, then remove and also decrease their values from cumulative rolling window values
-  //     if (slidingWindow.logs[i] === null) continue;
-  //     let oldLog = FeeDetailLogEntry.load(slidingWindow.logs[i]);
-  //     if (!oldLog) continue;
-  //     if (feeDetailLogEntry.timestamp.minus(oldLog.timestamp) > BigInt.fromI32(86400)) {
-  //       oldLog.rollingWindow = null;
-  //       slidingWindow.cumulativeGasFee = slidingWindow.cumulativeGasFee.minus(oldLog.gasFee);
-  //       slidingWindow.cumulativeLpFee = slidingWindow.cumulativeLpFee.minus(oldLog.lpFee);
-  //       slidingWindow.cumulativeTransferFee = slidingWindow.cumulativeTransferFee.minus(oldLog.transferFee);
-  //     }
-  //   }
-  // } else {
-  //   log.info("Inside else", []);
-  // }
 
   let oldFees = slidingWindow.logs;
   if (oldFees !== null) {
@@ -315,7 +313,7 @@ export function handleFeeDetails(event: FeeDetails): void {
         slidingWindow.cumulativeGasFee = slidingWindow.cumulativeGasFee.minus(oldFee.gasFee);
         slidingWindow.cumulativeLpFee = slidingWindow.cumulativeLpFee.minus(oldFee.lpFee);
         slidingWindow.cumulativeTransferFee = slidingWindow.cumulativeTransferFee.minus(oldFee.transferFee);
-
+        slidingWindow.count -= BigInt.fromI32(1);
       }
     }
   }
@@ -338,11 +336,14 @@ export function handleFeeDetails(event: FeeDetails): void {
     todayFeeDetailsLog.cumulativeGasFee = BigInt.fromI32(0);
     todayFeeDetailsLog.cumulativeLpFee = BigInt.fromI32(0);
     todayFeeDetailsLog.cumulativeTransferFee = BigInt.fromI32(0);
+    todayFeeDetailsLog.count = BigInt.fromI32(0);
+    todayFeeDetailsLog.timestamp = dayEpoch;
   }
 
   todayFeeDetailsLog.cumulativeGasFee = todayFeeDetailsLog.cumulativeGasFee.plus(feeDetailLogEntry.gasFee);
   todayFeeDetailsLog.cumulativeLpFee = todayFeeDetailsLog.cumulativeLpFee.plus(feeDetailLogEntry.lpFee);
   todayFeeDetailsLog.cumulativeTransferFee = todayFeeDetailsLog.cumulativeTransferFee.plus(feeDetailLogEntry.transferFee);
+  todayFeeDetailsLog.count += BigInt.fromI32(1);
 
   feeDetailLogEntry.dailyWindow = todayFeeDetailsLog.id;
   feeDetailLogEntry.save();

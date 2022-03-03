@@ -4,11 +4,11 @@ schema:
 dataSources:
   - kind: ethereum
     name: LiquidityPool
-    network: mumbai
+    network: goerli
     source:
-      address: "0x5a63a7Eb13C121cCeF718b28d7e75C68E455a25c"
+      address: "0xca6f716E732593e34aAE7a2E0a2775aFB5D5C088"
       abi: LiquidityPool
-      startBlock: 25329437
+      startBlock: 6432173
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.5
@@ -36,3 +36,28 @@ dataSources:
         - event: FeeDetails(indexed uint256,indexed uint256,indexed uint256)
           handler: handleFeeDetails
       file: LiquidityPool/LiquidityPool.wasm
+  - kind: ethereum
+    name: LiquidityProviders
+    network: goerli
+    source:
+      address: "0xE0875Ee87aD154Ec7C0a2e8957B5476c1bece495"
+      abi: LiquidityProviders
+      startBlock: 6432173
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.5
+      language: wasm/assemblyscript
+      entities:
+        - LiquidityAdded
+        - LiquidityRemoved
+      abis:
+        - name: LiquidityProviders
+          file: LiquidityProviders/abis/LiquidityProviders.json
+      eventHandlers:
+        - event: LiquidityAdded(indexed address,indexed uint256,indexed address)
+          handler: handleLiquidityAdded
+        - event: LiquidityRemoved(indexed address,indexed uint256,indexed address)
+          handler: handleFeeAdded
+        - event: FeeAdded(indexed address,indexed uint256)
+          handler: handleFeeAdded
+      file: LiquidityProviders/LiquidityProviders.wasm

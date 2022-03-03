@@ -31,11 +31,11 @@ dataSources:
           file: ./abis/LiquidityPool.json
       eventHandlers:
         # - event: AssetSent(indexed address,indexed uint256,indexed uint256,address,bytes,uint256)
-          # handler: handleAssetSent
+        # handler: handleAssetSent
         - event: Deposit(indexed address,indexed address,indexed address,uint256,uint256,uint256,string)
           handler: handleDeposit
         # - event: EthReceived(address,uint256)
-          # handler: handleEthReceived
+        # handler: handleEthReceived
         - event: FeeDetails(indexed uint256,indexed uint256,indexed uint256)
           handler: handleFeeDetails
         # - event: GasFeeWithdraw(indexed address,indexed address,indexed uint256)
@@ -55,3 +55,28 @@ dataSources:
         # - event: Unpaused(address)
         #   handler: handleUnpaused
       file: ./src/mapping.ts
+  - kind: ethereum
+    name: LiquidityProviders
+    network: goerli
+    source:
+      address: "0xE0875Ee87aD154Ec7C0a2e8957B5476c1bece495"
+      abi: LiquidityProviders
+      startBlock: 6432173
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.5
+      language: wasm/assemblyscript
+      entities:
+        - LiquidityAdded
+        - LiquidityRemoved
+      abis:
+        - name: LiquidityProviders
+          file: ./abis/LiquidityProviders.json
+      eventHandlers:
+        - event: LiquidityAdded(indexed address,indexed uint256,indexed address)
+          handler: handleLiquidityAdded
+        - event: LiquidityRemoved(indexed address,indexed uint256,indexed address)
+          handler: handleFeeAdded
+        - event: FeeAdded(indexed address,indexed uint256)
+          handler: handleFeeAdded
+      file: ./src/liquidityProvidersMapping.ts
