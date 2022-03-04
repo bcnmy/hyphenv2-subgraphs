@@ -1,6 +1,6 @@
 {
-  "liquidityPoolContractAddress": "0x4C943bA53DDAb515D4E8fe968CecE3BBB0f0C738",
-  "liquidityProvidersContractAddress": "0xa4d4D30c4C9ae6893e75445A26123AAE869b6435",
+  "liquidityPoolContractAddress": "0xB726675394b2dDeE2C897ad31a62C7545Ad7C68D",
+  "liquidityProvidersContractAddress": "0x17D42A784928a8168a871fA627bb1e4023D25C2A",
   "network": "fuji",
   "startBlock": 6834655
 }
