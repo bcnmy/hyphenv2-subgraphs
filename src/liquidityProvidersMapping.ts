@@ -41,6 +41,7 @@ export function handleFeeAdded(event: FeeAdded): void {
   if (!rollingApyFor24Hour) {
     rollingApyFor24Hour = new RollingApyFor24Hour(tokenPriceInLPSharesLog.tokenAddress.toHexString());
     rollingApyFor24Hour.firstTokenPriceInLPShares = currentTokenPriceInLPShares;
+    rollingApyFor24Hour.tokenAddress = tokenPriceInLPSharesLog.tokenAddress;
   }
   
   let oldLpLogs = rollingApyFor24Hour.lpLogs;
