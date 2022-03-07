@@ -37,9 +37,9 @@ export function handleFeeAdded(event: FeeAdded): void {
   tokenPriceInLPSharesLog.timestamp = event.block.timestamp;
 
   // 24 hour window calculation
-  let rollingApyFor24Hour = RollingApyFor24Hour.load("0");
+  let rollingApyFor24Hour = RollingApyFor24Hour.load(tokenPriceInLPSharesLog.tokenAddress.toHexString());
   if (!rollingApyFor24Hour) {
-    rollingApyFor24Hour = new RollingApyFor24Hour("0");
+    rollingApyFor24Hour = new RollingApyFor24Hour(tokenPriceInLPSharesLog.tokenAddress.toHexString());
     rollingApyFor24Hour.firstTokenPriceInLPShares = currentTokenPriceInLPShares;
   }
   
