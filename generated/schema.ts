@@ -1558,3 +1558,531 @@ export class AssetSentToUserLogEntry extends Entity {
     this.set("fromChainId", Value.fromBigInt(value));
   }
 }
+
+export class SuppliedLiquidityLogEntry extends Entity {
+  constructor(id: string) {
+    super();
+    this.set("id", Value.fromString(id));
+
+    this.set("timestamp", Value.fromBigInt(BigInt.zero()));
+    this.set("suppliedLiquidity", Value.fromBigInt(BigInt.zero()));
+    this.set("tokenAddress", Value.fromBytes(Bytes.empty()));
+  }
+
+  save(): void {
+    let id = this.get("id");
+    assert(
+      id != null,
+      "Cannot save SuppliedLiquidityLogEntry entity without an ID"
+    );
+    if (id) {
+      assert(
+        id.kind == ValueKind.STRING,
+        "Cannot save SuppliedLiquidityLogEntry entity with non-string ID. " +
+          'Considering using .toHex() to convert the "id" to a string.'
+      );
+      store.set("SuppliedLiquidityLogEntry", id.toString(), this);
+    }
+  }
+
+  static load(id: string): SuppliedLiquidityLogEntry | null {
+    return changetype<SuppliedLiquidityLogEntry | null>(
+      store.get("SuppliedLiquidityLogEntry", id)
+    );
+  }
+
+  get id(): string {
+    let value = this.get("id");
+    return value!.toString();
+  }
+
+  set id(value: string) {
+    this.set("id", Value.fromString(value));
+  }
+
+  get timestamp(): BigInt {
+    let value = this.get("timestamp");
+    return value!.toBigInt();
+  }
+
+  set timestamp(value: BigInt) {
+    this.set("timestamp", Value.fromBigInt(value));
+  }
+
+  get suppliedLiquidity(): BigInt {
+    let value = this.get("suppliedLiquidity");
+    return value!.toBigInt();
+  }
+
+  set suppliedLiquidity(value: BigInt) {
+    this.set("suppliedLiquidity", Value.fromBigInt(value));
+  }
+
+  get tokenAddress(): Bytes {
+    let value = this.get("tokenAddress");
+    return value!.toBytes();
+  }
+
+  set tokenAddress(value: Bytes) {
+    this.set("tokenAddress", Value.fromBytes(value));
+  }
+
+  get suppliedLiquidityRollingWindow(): string | null {
+    let value = this.get("suppliedLiquidityRollingWindow");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toString();
+    }
+  }
+
+  set suppliedLiquidityRollingWindow(value: string | null) {
+    if (!value) {
+      this.unset("suppliedLiquidityRollingWindow");
+    } else {
+      this.set(
+        "suppliedLiquidityRollingWindow",
+        Value.fromString(<string>value)
+      );
+    }
+  }
+}
+
+export class HourlySuppliedLiquidity extends Entity {
+  constructor(id: string) {
+    super();
+    this.set("id", Value.fromString(id));
+
+    this.set("timestamp", Value.fromBigInt(BigInt.zero()));
+    this.set("suppliedLiquidity", Value.fromBigInt(BigInt.zero()));
+    this.set("tokenAddress", Value.fromBytes(Bytes.empty()));
+    this.set("count", Value.fromBigInt(BigInt.zero()));
+  }
+
+  save(): void {
+    let id = this.get("id");
+    assert(
+      id != null,
+      "Cannot save HourlySuppliedLiquidity entity without an ID"
+    );
+    if (id) {
+      assert(
+        id.kind == ValueKind.STRING,
+        "Cannot save HourlySuppliedLiquidity entity with non-string ID. " +
+          'Considering using .toHex() to convert the "id" to a string.'
+      );
+      store.set("HourlySuppliedLiquidity", id.toString(), this);
+    }
+  }
+
+  static load(id: string): HourlySuppliedLiquidity | null {
+    return changetype<HourlySuppliedLiquidity | null>(
+      store.get("HourlySuppliedLiquidity", id)
+    );
+  }
+
+  get id(): string {
+    let value = this.get("id");
+    return value!.toString();
+  }
+
+  set id(value: string) {
+    this.set("id", Value.fromString(value));
+  }
+
+  get timestamp(): BigInt {
+    let value = this.get("timestamp");
+    return value!.toBigInt();
+  }
+
+  set timestamp(value: BigInt) {
+    this.set("timestamp", Value.fromBigInt(value));
+  }
+
+  get suppliedLiquidity(): BigInt {
+    let value = this.get("suppliedLiquidity");
+    return value!.toBigInt();
+  }
+
+  set suppliedLiquidity(value: BigInt) {
+    this.set("suppliedLiquidity", Value.fromBigInt(value));
+  }
+
+  get tokenAddress(): Bytes {
+    let value = this.get("tokenAddress");
+    return value!.toBytes();
+  }
+
+  set tokenAddress(value: Bytes) {
+    this.set("tokenAddress", Value.fromBytes(value));
+  }
+
+  get count(): BigInt {
+    let value = this.get("count");
+    return value!.toBigInt();
+  }
+
+  set count(value: BigInt) {
+    this.set("count", Value.fromBigInt(value));
+  }
+}
+
+export class RollingSuppliedLiquidityForLast24Hour extends Entity {
+  constructor(id: string) {
+    super();
+    this.set("id", Value.fromString(id));
+
+    this.set("timestamp", Value.fromBigInt(BigInt.zero()));
+    this.set("suppliedLiquidity", Value.fromBigInt(BigInt.zero()));
+    this.set("tokenAddress", Value.fromBytes(Bytes.empty()));
+    this.set("count", Value.fromBigInt(BigInt.zero()));
+  }
+
+  save(): void {
+    let id = this.get("id");
+    assert(
+      id != null,
+      "Cannot save RollingSuppliedLiquidityForLast24Hour entity without an ID"
+    );
+    if (id) {
+      assert(
+        id.kind == ValueKind.STRING,
+        "Cannot save RollingSuppliedLiquidityForLast24Hour entity with non-string ID. " +
+          'Considering using .toHex() to convert the "id" to a string.'
+      );
+      store.set("RollingSuppliedLiquidityForLast24Hour", id.toString(), this);
+    }
+  }
+
+  static load(id: string): RollingSuppliedLiquidityForLast24Hour | null {
+    return changetype<RollingSuppliedLiquidityForLast24Hour | null>(
+      store.get("RollingSuppliedLiquidityForLast24Hour", id)
+    );
+  }
+
+  get id(): string {
+    let value = this.get("id");
+    return value!.toString();
+  }
+
+  set id(value: string) {
+    this.set("id", Value.fromString(value));
+  }
+
+  get timestamp(): BigInt {
+    let value = this.get("timestamp");
+    return value!.toBigInt();
+  }
+
+  set timestamp(value: BigInt) {
+    this.set("timestamp", Value.fromBigInt(value));
+  }
+
+  get suppliedLiquidity(): BigInt {
+    let value = this.get("suppliedLiquidity");
+    return value!.toBigInt();
+  }
+
+  set suppliedLiquidity(value: BigInt) {
+    this.set("suppliedLiquidity", Value.fromBigInt(value));
+  }
+
+  get tokenAddress(): Bytes {
+    let value = this.get("tokenAddress");
+    return value!.toBytes();
+  }
+
+  set tokenAddress(value: Bytes) {
+    this.set("tokenAddress", Value.fromBytes(value));
+  }
+
+  get count(): BigInt {
+    let value = this.get("count");
+    return value!.toBigInt();
+  }
+
+  set count(value: BigInt) {
+    this.set("count", Value.fromBigInt(value));
+  }
+
+  get logs(): Array<string> | null {
+    let value = this.get("logs");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toStringArray();
+    }
+  }
+
+  set logs(value: Array<string> | null) {
+    if (!value) {
+      this.unset("logs");
+    } else {
+      this.set("logs", Value.fromStringArray(<Array<string>>value));
+    }
+  }
+}
+
+export class AvailableLiquidityLogEntry extends Entity {
+  constructor(id: string) {
+    super();
+    this.set("id", Value.fromString(id));
+
+    this.set("timestamp", Value.fromBigInt(BigInt.zero()));
+    this.set("availableLiquidity", Value.fromBigInt(BigInt.zero()));
+    this.set("tokenAddress", Value.fromBytes(Bytes.empty()));
+  }
+
+  save(): void {
+    let id = this.get("id");
+    assert(
+      id != null,
+      "Cannot save AvailableLiquidityLogEntry entity without an ID"
+    );
+    if (id) {
+      assert(
+        id.kind == ValueKind.STRING,
+        "Cannot save AvailableLiquidityLogEntry entity with non-string ID. " +
+          'Considering using .toHex() to convert the "id" to a string.'
+      );
+      store.set("AvailableLiquidityLogEntry", id.toString(), this);
+    }
+  }
+
+  static load(id: string): AvailableLiquidityLogEntry | null {
+    return changetype<AvailableLiquidityLogEntry | null>(
+      store.get("AvailableLiquidityLogEntry", id)
+    );
+  }
+
+  get id(): string {
+    let value = this.get("id");
+    return value!.toString();
+  }
+
+  set id(value: string) {
+    this.set("id", Value.fromString(value));
+  }
+
+  get timestamp(): BigInt {
+    let value = this.get("timestamp");
+    return value!.toBigInt();
+  }
+
+  set timestamp(value: BigInt) {
+    this.set("timestamp", Value.fromBigInt(value));
+  }
+
+  get availableLiquidity(): BigInt {
+    let value = this.get("availableLiquidity");
+    return value!.toBigInt();
+  }
+
+  set availableLiquidity(value: BigInt) {
+    this.set("availableLiquidity", Value.fromBigInt(value));
+  }
+
+  get tokenAddress(): Bytes {
+    let value = this.get("tokenAddress");
+    return value!.toBytes();
+  }
+
+  set tokenAddress(value: Bytes) {
+    this.set("tokenAddress", Value.fromBytes(value));
+  }
+
+  get availableLiquidityRollingWindow(): string | null {
+    let value = this.get("availableLiquidityRollingWindow");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toString();
+    }
+  }
+
+  set availableLiquidityRollingWindow(value: string | null) {
+    if (!value) {
+      this.unset("availableLiquidityRollingWindow");
+    } else {
+      this.set(
+        "availableLiquidityRollingWindow",
+        Value.fromString(<string>value)
+      );
+    }
+  }
+}
+
+export class HourlyAvailableLiquidity extends Entity {
+  constructor(id: string) {
+    super();
+    this.set("id", Value.fromString(id));
+
+    this.set("timestamp", Value.fromBigInt(BigInt.zero()));
+    this.set("availableLiquidity", Value.fromBigInt(BigInt.zero()));
+    this.set("tokenAddress", Value.fromBytes(Bytes.empty()));
+    this.set("count", Value.fromBigInt(BigInt.zero()));
+  }
+
+  save(): void {
+    let id = this.get("id");
+    assert(
+      id != null,
+      "Cannot save HourlyAvailableLiquidity entity without an ID"
+    );
+    if (id) {
+      assert(
+        id.kind == ValueKind.STRING,
+        "Cannot save HourlyAvailableLiquidity entity with non-string ID. " +
+          'Considering using .toHex() to convert the "id" to a string.'
+      );
+      store.set("HourlyAvailableLiquidity", id.toString(), this);
+    }
+  }
+
+  static load(id: string): HourlyAvailableLiquidity | null {
+    return changetype<HourlyAvailableLiquidity | null>(
+      store.get("HourlyAvailableLiquidity", id)
+    );
+  }
+
+  get id(): string {
+    let value = this.get("id");
+    return value!.toString();
+  }
+
+  set id(value: string) {
+    this.set("id", Value.fromString(value));
+  }
+
+  get timestamp(): BigInt {
+    let value = this.get("timestamp");
+    return value!.toBigInt();
+  }
+
+  set timestamp(value: BigInt) {
+    this.set("timestamp", Value.fromBigInt(value));
+  }
+
+  get availableLiquidity(): BigInt {
+    let value = this.get("availableLiquidity");
+    return value!.toBigInt();
+  }
+
+  set availableLiquidity(value: BigInt) {
+    this.set("availableLiquidity", Value.fromBigInt(value));
+  }
+
+  get tokenAddress(): Bytes {
+    let value = this.get("tokenAddress");
+    return value!.toBytes();
+  }
+
+  set tokenAddress(value: Bytes) {
+    this.set("tokenAddress", Value.fromBytes(value));
+  }
+
+  get count(): BigInt {
+    let value = this.get("count");
+    return value!.toBigInt();
+  }
+
+  set count(value: BigInt) {
+    this.set("count", Value.fromBigInt(value));
+  }
+}
+
+export class RollingAvailableLiquidityForLast24Hour extends Entity {
+  constructor(id: string) {
+    super();
+    this.set("id", Value.fromString(id));
+
+    this.set("timestamp", Value.fromBigInt(BigInt.zero()));
+    this.set("availableiquidity", Value.fromBigInt(BigInt.zero()));
+    this.set("tokenAddress", Value.fromBytes(Bytes.empty()));
+    this.set("count", Value.fromBigInt(BigInt.zero()));
+  }
+
+  save(): void {
+    let id = this.get("id");
+    assert(
+      id != null,
+      "Cannot save RollingAvailableLiquidityForLast24Hour entity without an ID"
+    );
+    if (id) {
+      assert(
+        id.kind == ValueKind.STRING,
+        "Cannot save RollingAvailableLiquidityForLast24Hour entity with non-string ID. " +
+          'Considering using .toHex() to convert the "id" to a string.'
+      );
+      store.set("RollingAvailableLiquidityForLast24Hour", id.toString(), this);
+    }
+  }
+
+  static load(id: string): RollingAvailableLiquidityForLast24Hour | null {
+    return changetype<RollingAvailableLiquidityForLast24Hour | null>(
+      store.get("RollingAvailableLiquidityForLast24Hour", id)
+    );
+  }
+
+  get id(): string {
+    let value = this.get("id");
+    return value!.toString();
+  }
+
+  set id(value: string) {
+    this.set("id", Value.fromString(value));
+  }
+
+  get timestamp(): BigInt {
+    let value = this.get("timestamp");
+    return value!.toBigInt();
+  }
+
+  set timestamp(value: BigInt) {
+    this.set("timestamp", Value.fromBigInt(value));
+  }
+
+  get availableiquidity(): BigInt {
+    let value = this.get("availableiquidity");
+    return value!.toBigInt();
+  }
+
+  set availableiquidity(value: BigInt) {
+    this.set("availableiquidity", Value.fromBigInt(value));
+  }
+
+  get tokenAddress(): Bytes {
+    let value = this.get("tokenAddress");
+    return value!.toBytes();
+  }
+
+  set tokenAddress(value: Bytes) {
+    this.set("tokenAddress", Value.fromBytes(value));
+  }
+
+  get count(): BigInt {
+    let value = this.get("count");
+    return value!.toBigInt();
+  }
+
+  set count(value: BigInt) {
+    this.set("count", Value.fromBigInt(value));
+  }
+
+  get logs(): Array<string> | null {
+    let value = this.get("logs");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toStringArray();
+    }
+  }
+
+  set logs(value: Array<string> | null) {
+    if (!value) {
+      this.unset("logs");
+    } else {
+      this.set("logs", Value.fromStringArray(<Array<string>>value));
+    }
+  }
+}

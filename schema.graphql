@@ -153,3 +153,55 @@ type AssetSentToUserLogEntry @entity {
   depositHash: Bytes!
   fromChainId: BigInt!
 }
+
+type SuppliedLiquidityLogEntry @entity {
+  id: ID!
+  timestamp: BigInt!
+  suppliedLiquidity: BigInt!
+  tokenAddress: Bytes!
+  suppliedLiquidityRollingWindow: RollingSuppliedLiquidityForLast24Hour
+}
+
+type HourlySuppliedLiquidity @entity {
+  id: ID!
+  timestamp: BigInt!
+  suppliedLiquidity: BigInt!
+  tokenAddress: Bytes!
+  count: BigInt!
+}
+
+type RollingSuppliedLiquidityForLast24Hour @entity {
+  id: ID!
+  timestamp: BigInt!
+  suppliedLiquidity: BigInt!
+  tokenAddress: Bytes!
+  count: BigInt!
+  logs: [SuppliedLiquidityLogEntry!] @derivedFrom(field: "suppliedLiquidityRollingWindow")
+
+  
+}
+
+type AvailableLiquidityLogEntry @entity {
+  id: ID!
+  timestamp: BigInt!
+  availableLiquidity: BigInt!
+  tokenAddress: Bytes!
+  availableLiquidityRollingWindow: RollingAvailableLiquidityForLast24Hour
+}
+
+type HourlyAvailableLiquidity @entity {
+  id: ID!
+  timestamp: BigInt!
+  availableLiquidity: BigInt!
+  tokenAddress: Bytes!
+  count: BigInt!
+}
+
+type RollingAvailableLiquidityForLast24Hour @entity {
+  id: ID!
+  timestamp: BigInt!
+  availableiquidity: BigInt!
+  tokenAddress: Bytes!
+  count: BigInt!
+  logs: [AvailableLiquidityLogEntry!] @derivedFrom(field: "availableLiquidityRollingWindow")
+}
