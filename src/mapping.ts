@@ -28,8 +28,21 @@ import {
   UniqueWallet,
   UniqueWalletCount,
   DepositVolumeCumulativePerChainAndToken,
-  DailyDepositVolumePerChainAndToken
+  DailyDepositVolumePerChainAndToken,
+  AssetSentToUserLogEntry
 } from "../generated/schema"
+
+export function handleAssetSent(event: AssetSent): void {
+  let assetSent = new AssetSentToUserLogEntry(event.transaction.hash.toHex());
+  assetSent.tokenAddress=event.params.asset;
+  assetSent.amount=event.params.amount;
+  assetSent.transferredAmount=event.params.transferredAmount;
+  assetSent.receiver=event.params.target;
+  assetSent.depositHash=event.params.depositHash;
+  assetSent.fromChainId=event.params.fromChainId;
+
+  assetSent.save();
+}
 
 export function handleDeposit(event: Deposit): void {
   const deposit = new DepositEntity(event.transaction.hash.toHex());

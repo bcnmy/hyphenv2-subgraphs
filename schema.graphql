@@ -143,3 +143,13 @@ type RollingApyFor24Hour @entity {
   tokenAddress: Bytes!
   lpLogs: [TokenPriceInLPSharesLog!] @derivedFrom(field: "rollingApyWindow")
 }
+
+type AssetSentToUserLogEntry @entity {
+  id: ID!
+  tokenAddress: Bytes!
+  amount: BigInt!
+  transferredAmount: BigInt!
+  receiver: Bytes!
+  depositHash: Bytes!
+  fromChainId: BigInt!
+}

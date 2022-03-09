@@ -1459,3 +1459,102 @@ export class RollingApyFor24Hour extends Entity {
     }
   }
 }
+
+export class AssetSentToUserLogEntry extends Entity {
+  constructor(id: string) {
+    super();
+    this.set("id", Value.fromString(id));
+
+    this.set("tokenAddress", Value.fromBytes(Bytes.empty()));
+    this.set("amount", Value.fromBigInt(BigInt.zero()));
+    this.set("transferredAmount", Value.fromBigInt(BigInt.zero()));
+    this.set("receiver", Value.fromBytes(Bytes.empty()));
+    this.set("depositHash", Value.fromBytes(Bytes.empty()));
+    this.set("fromChainId", Value.fromBigInt(BigInt.zero()));
+  }
+
+  save(): void {
+    let id = this.get("id");
+    assert(
+      id != null,
+      "Cannot save AssetSentToUserLogEntry entity without an ID"
+    );
+    if (id) {
+      assert(
+        id.kind == ValueKind.STRING,
+        "Cannot save AssetSentToUserLogEntry entity with non-string ID. " +
+          'Considering using .toHex() to convert the "id" to a string.'
+      );
+      store.set("AssetSentToUserLogEntry", id.toString(), this);
+    }
+  }
+
+  static load(id: string): AssetSentToUserLogEntry | null {
+    return changetype<AssetSentToUserLogEntry | null>(
+      store.get("AssetSentToUserLogEntry", id)
+    );
+  }
+
+  get id(): string {
+    let value = this.get("id");
+    return value!.toString();
+  }
+
+  set id(value: string) {
+    this.set("id", Value.fromString(value));
+  }
+
+  get tokenAddress(): Bytes {
+    let value = this.get("tokenAddress");
+    return value!.toBytes();
+  }
+
+  set tokenAddress(value: Bytes) {
+    this.set("tokenAddress", Value.fromBytes(value));
+  }
+
+  get amount(): BigInt {
+    let value = this.get("amount");
+    return value!.toBigInt();
+  }
+
+  set amount(value: BigInt) {
+    this.set("amount", Value.fromBigInt(value));
+  }
+
+  get transferredAmount(): BigInt {
+    let value = this.get("transferredAmount");
+    return value!.toBigInt();
+  }
+
+  set transferredAmount(value: BigInt) {
+    this.set("transferredAmount", Value.fromBigInt(value));
+  }
+
+  get receiver(): Bytes {
+    let value = this.get("receiver");
+    return value!.toBytes();
+  }
+
+  set receiver(value: Bytes) {
+    this.set("receiver", Value.fromBytes(value));
+  }
+
+  get depositHash(): Bytes {
+    let value = this.get("depositHash");
+    return value!.toBytes();
+  }
+
+  set depositHash(value: Bytes) {
+    this.set("depositHash", Value.fromBytes(value));
+  }
+
+  get fromChainId(): BigInt {
+    let value = this.get("fromChainId");
+    return value!.toBigInt();
+  }
+
+  set fromChainId(value: BigInt) {
+    this.set("fromChainId", Value.fromBigInt(value));
+  }
+}
