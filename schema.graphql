@@ -148,6 +148,7 @@ type AssetSentToUserLogEntry @entity {
   id: ID!
   tokenAddress: Bytes!
   amount: BigInt!
+  timestamp: BigInt!
   transferredAmount: BigInt!
   receiver: Bytes!
   depositHash: Bytes!
