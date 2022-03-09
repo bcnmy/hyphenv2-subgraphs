@@ -61,7 +61,7 @@ dataSources:
     source:
       address: "{{liquidityProvidersContractAddress}}"
       abi: LiquidityProviders
-      startBlock: 6432173
+      startBlock: {{startBlock}}
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.5
