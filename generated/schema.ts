@@ -1467,6 +1467,7 @@ export class AssetSentToUserLogEntry extends Entity {
 
     this.set("tokenAddress", Value.fromBytes(Bytes.empty()));
     this.set("amount", Value.fromBigInt(BigInt.zero()));
+    this.set("timestamp", Value.fromBigInt(BigInt.zero()));
     this.set("transferredAmount", Value.fromBigInt(BigInt.zero()));
     this.set("receiver", Value.fromBytes(Bytes.empty()));
     this.set("depositHash", Value.fromBytes(Bytes.empty()));
@@ -1520,6 +1521,15 @@ export class AssetSentToUserLogEntry extends Entity {
 
   set amount(value: BigInt) {
     this.set("amount", Value.fromBigInt(value));
+  }
+
+  get timestamp(): BigInt {
+    let value = this.get("timestamp");
+    return value!.toBigInt();
+  }
+
+  set timestamp(value: BigInt) {
+    this.set("timestamp", Value.fromBigInt(value));
   }
 
   get transferredAmount(): BigInt {
@@ -1996,8 +2006,7 @@ export class RollingAvailableLiquidityForLast24Hour extends Entity {
     super();
     this.set("id", Value.fromString(id));
 
-    this.set("timestamp", Value.fromBigInt(BigInt.zero()));
-    this.set("availableiquidity", Value.fromBigInt(BigInt.zero()));
+    this.set("availableLiquidity", Value.fromBigInt(BigInt.zero()));
     this.set("tokenAddress", Value.fromBytes(Bytes.empty()));
     this.set("count", Value.fromBigInt(BigInt.zero()));
   }
@@ -2033,22 +2042,13 @@ export class RollingAvailableLiquidityForLast24Hour extends Entity {
     this.set("id", Value.fromString(value));
   }
 
-  get timestamp(): BigInt {
-    let value = this.get("timestamp");
+  get availableLiquidity(): BigInt {
+    let value = this.get("availableLiquidity");
     return value!.toBigInt();
   }
 
-  set timestamp(value: BigInt) {
-    this.set("timestamp", Value.fromBigInt(value));
-  }
-
-  get availableiquidity(): BigInt {
-    let value = this.get("availableiquidity");
-    return value!.toBigInt();
-  }
-
-  set availableiquidity(value: BigInt) {
-    this.set("availableiquidity", Value.fromBigInt(value));
+  set availableLiquidity(value: BigInt) {
+    this.set("availableLiquidity", Value.fromBigInt(value));
   }
 
   get tokenAddress(): Bytes {

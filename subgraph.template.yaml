@@ -76,7 +76,9 @@ dataSources:
         - event: LiquidityAdded(indexed address,indexed uint256,indexed address)
           handler: handleLiquidityAdded
         - event: LiquidityRemoved(indexed address,indexed uint256,indexed address)
-          handler: handleFeeAdded
+          handler: handleLiquidityRemoved
         - event: FeeAdded(indexed address,indexed uint256)
           handler: handleFeeAdded
+        - event: CurrentLiquidityChanged(indexed address,indexed uint256,indexed uint256)
+          handler: handleCurrentLiquidityChanged
       file: ./src/liquidityProvidersMapping.ts

@@ -178,9 +178,7 @@ type RollingSuppliedLiquidityForLast24Hour @entity {
   tokenAddress: Bytes!
   count: BigInt!
   logs: [SuppliedLiquidityLogEntry!] @derivedFrom(field: "suppliedLiquidityRollingWindow")
-
-  
-}
+  }
 
 type AvailableLiquidityLogEntry @entity {
   id: ID!
@@ -200,9 +198,9 @@ type HourlyAvailableLiquidity @entity {
 
 type RollingAvailableLiquidityForLast24Hour @entity {
   id: ID!
-  timestamp: BigInt!
-  availableiquidity: BigInt!
+  availableLiquidity: BigInt!
   tokenAddress: Bytes!
   count: BigInt!
-  logs: [AvailableLiquidityLogEntry!] @derivedFrom(field: "availableLiquidityRollingWindow")
+  logs: [AvailableLiquidityLogEntry!]
+    @derivedFrom(field: "availableLiquidityRollingWindow")
 }

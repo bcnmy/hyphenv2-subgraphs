@@ -10,6 +10,32 @@ import {
   BigInt
 } from "@graphprotocol/graph-ts";
 
+export class CurrentLiquidityChanged extends ethereum.Event {
+  get params(): CurrentLiquidityChanged__Params {
+    return new CurrentLiquidityChanged__Params(this);
+  }
+}
+
+export class CurrentLiquidityChanged__Params {
+  _event: CurrentLiquidityChanged;
+
+  constructor(event: CurrentLiquidityChanged) {
+    this._event = event;
+  }
+
+  get token(): Address {
+    return this._event.parameters[0].value.toAddress();
+  }
+
+  get oldValue(): BigInt {
+    return this._event.parameters[1].value.toBigInt();
+  }
+
+  get newValue(): BigInt {
+    return this._event.parameters[2].value.toBigInt();
+  }
+}
+
 export class EthReceived extends ethereum.Event {
   get params(): EthReceived__Params {
     return new EthReceived__Params(this);
@@ -229,6 +255,52 @@ export class LiquidityProviders extends ethereum.SmartContract {
 
   try_BASE_DIVISOR(): ethereum.CallResult<BigInt> {
     let result = super.tryCall("BASE_DIVISOR", "BASE_DIVISOR():(uint256)", []);
+    if (result.reverted) {
+      return new ethereum.CallResult();
+    }
+    let value = result.value;
+    return ethereum.CallResult.fromValue(value[0].toBigInt());
+  }
+
+  currentLiquidity(param0: Address): BigInt {
+    let result = super.call(
+      "currentLiquidity",
+      "currentLiquidity(address):(uint256)",
+      [ethereum.Value.fromAddress(param0)]
+    );
+
+    return result[0].toBigInt();
+  }
+
+  try_currentLiquidity(param0: Address): ethereum.CallResult<BigInt> {
+    let result = super.tryCall(
+      "currentLiquidity",
+      "currentLiquidity(address):(uint256)",
+      [ethereum.Value.fromAddress(param0)]
+    );
+    if (result.reverted) {
+      return new ethereum.CallResult();
+    }
+    let value = result.value;
+    return ethereum.CallResult.fromValue(value[0].toBigInt());
+  }
+
+  getCurrentLiquidity(tokenAddress: Address): BigInt {
+    let result = super.call(
+      "getCurrentLiquidity",
+      "getCurrentLiquidity(address):(uint256)",
+      [ethereum.Value.fromAddress(tokenAddress)]
+    );
+
+    return result[0].toBigInt();
+  }
+
+  try_getCurrentLiquidity(tokenAddress: Address): ethereum.CallResult<BigInt> {
+    let result = super.tryCall(
+      "getCurrentLiquidity",
+      "getCurrentLiquidity(address):(uint256)",
+      [ethereum.Value.fromAddress(tokenAddress)]
+    );
     if (result.reverted) {
       return new ethereum.CallResult();
     }
@@ -723,6 +795,74 @@ export class ClaimFeeCall__Outputs {
   _call: ClaimFeeCall;
 
   constructor(call: ClaimFeeCall) {
+    this._call = call;
+  }
+}
+
+export class DecreaseCurrentLiquidityCall extends ethereum.Call {
+  get inputs(): DecreaseCurrentLiquidityCall__Inputs {
+    return new DecreaseCurrentLiquidityCall__Inputs(this);
+  }
+
+  get outputs(): DecreaseCurrentLiquidityCall__Outputs {
+    return new DecreaseCurrentLiquidityCall__Outputs(this);
+  }
+}
+
+export class DecreaseCurrentLiquidityCall__Inputs {
+  _call: DecreaseCurrentLiquidityCall;
+
+  constructor(call: DecreaseCurrentLiquidityCall) {
+    this._call = call;
+  }
+
+  get tokenAddress(): Address {
+    return this._call.inputValues[0].value.toAddress();
+  }
+
+  get amount(): BigInt {
+    return this._call.inputValues[1].value.toBigInt();
+  }
+}
+
+export class DecreaseCurrentLiquidityCall__Outputs {
+  _call: DecreaseCurrentLiquidityCall;
+
+  constructor(call: DecreaseCurrentLiquidityCall) {
+    this._call = call;
+  }
+}
+
+export class IncreaseCurrentLiquidityCall extends ethereum.Call {
+  get inputs(): IncreaseCurrentLiquidityCall__Inputs {
+    return new IncreaseCurrentLiquidityCall__Inputs(this);
+  }
+
+  get outputs(): IncreaseCurrentLiquidityCall__Outputs {
+    return new IncreaseCurrentLiquidityCall__Outputs(this);
+  }
+}
+
+export class IncreaseCurrentLiquidityCall__Inputs {
+  _call: IncreaseCurrentLiquidityCall;
+
+  constructor(call: IncreaseCurrentLiquidityCall) {
+    this._call = call;
+  }
+
+  get tokenAddress(): Address {
+    return this._call.inputValues[0].value.toAddress();
+  }
+
+  get amount(): BigInt {
+    return this._call.inputValues[1].value.toBigInt();
+  }
+}
+
+export class IncreaseCurrentLiquidityCall__Outputs {
+  _call: IncreaseCurrentLiquidityCall;
+
+  constructor(call: IncreaseCurrentLiquidityCall) {
     this._call = call;
   }
 }

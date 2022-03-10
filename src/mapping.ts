@@ -1,4 +1,4 @@
-import { BigInt, log } from "@graphprotocol/graph-ts"
+import { Address, BigInt, log } from "@graphprotocol/graph-ts"
 import {
   LiquidityPool,
   AssetSent,
@@ -29,22 +29,96 @@ import {
   UniqueWalletCount,
   DepositVolumeCumulativePerChainAndToken,
   DailyDepositVolumePerChainAndToken,
-  AssetSentToUserLogEntry
+  AssetSentToUserLogEntry,
+  AvailableLiquidityLogEntry,
+  HourlyAvailableLiquidity,
+  RollingAvailableLiquidityForLast24Hour
 } from "../generated/schema"
+
+// import { updateAvailableLiquidity } from "./liquidity";
+
+export function updateAvailableLiquidity(txId: string, tokenAddress: Address, timestamp: BigInt, eventAddress: Address): void {
+  const liquidityPoolContract = LiquidityPool.bind(eventAddress);
+  const currentAvailableLiquiliquidity = liquidityPoolContract.getCurrentLiquidity(tokenAddress);
+
+  const logKey = `${txId}-${tokenAddress.toHex()}`;
+  let availableLiquidityLogEntry = AvailableLiquidityLogEntry.load(logKey);
+  if (!availableLiquidityLogEntry) {
+      availableLiquidityLogEntry = new AvailableLiquidityLogEntry(logKey);
+      availableLiquidityLogEntry.tokenAddress = tokenAddress;
+      availableLiquidityLogEntry.timestamp = timestamp;
+  } else {
+      availableLiquidityLogEntry.save();
+      return;
+  }
+
+  const epochModSecondsInAHour = timestamp.mod(BigInt.fromI32(3600));
+  const hourEpoch = timestamp.minus(epochModSecondsInAHour);
+
+  let hourlyAvailableLiquidity = HourlyAvailableLiquidity.load(`${tokenAddress.toHex()}-${hourEpoch.toString()}`);
+  if (!hourlyAvailableLiquidity) {
+      hourlyAvailableLiquidity = new HourlyAvailableLiquidity(tokenAddress.toHex());
+      hourlyAvailableLiquidity.availableLiquidity = BigInt.fromI32(0);
+      hourlyAvailableLiquidity.tokenAddress = tokenAddress;
+      hourlyAvailableLiquidity.timestamp = hourEpoch;
+      hourlyAvailableLiquidity.count = BigInt.fromI32(0);
+  }
+
+  hourlyAvailableLiquidity.count = hourlyAvailableLiquidity.count.plus(BigInt.fromI32(1));
+  hourlyAvailableLiquidity.availableLiquidity = (hourlyAvailableLiquidity.availableLiquidity.times(hourlyAvailableLiquidity.count)).plus(currentAvailableLiquiliquidity).div(hourlyAvailableLiquidity.count);
+  hourlyAvailableLiquidity.save();
+
+
+  let availableLiquidityRollingWindow = RollingAvailableLiquidityForLast24Hour.load(tokenAddress.toHex());
+  if (!availableLiquidityRollingWindow) {
+      availableLiquidityRollingWindow = new RollingAvailableLiquidityForLast24Hour(tokenAddress.toHex());
+      availableLiquidityRollingWindow.tokenAddress = tokenAddress;
+      availableLiquidityRollingWindow.availableLiquidity = BigInt.fromI32(0);
+      availableLiquidityRollingWindow.count = BigInt.fromI32(0);
+  }
+
+  availableLiquidityRollingWindow.count = availableLiquidityRollingWindow.count.plus(BigInt.fromI32(1));
+  availableLiquidityRollingWindow.availableLiquidity = (availableLiquidityRollingWindow.availableLiquidity.times(availableLiquidityRollingWindow.count)).plus(currentAvailableLiquiliquidity).div(availableLiquidityRollingWindow.count);
+
+  let oldAvailableLiquidityLogs = availableLiquidityRollingWindow.logs;
+  if (oldAvailableLiquidityLogs !== null) {
+      // sliding window calculation
+      for (let i = 0; i < oldAvailableLiquidityLogs.length; i++) {
+          // for every feeDetailLogEntry in the rolling window, check if they are old enough to remove
+          // if so, then remove and also decrease their values from cumulative rolling window values
+          let oldAvailableLiquidityLog = AvailableLiquidityLogEntry.load(oldAvailableLiquidityLogs[i]);
+          if (!oldAvailableLiquidityLog) continue;
+          if (timestamp.minus(oldAvailableLiquidityLog.timestamp) > BigInt.fromI32(3600)) {
+              oldAvailableLiquidityLog.availableLiquidityRollingWindow = null;
+              oldAvailableLiquidityLog.save();
+
+              availableLiquidityRollingWindow.count = availableLiquidityRollingWindow.count.minus(BigInt.fromI32(1));
+              availableLiquidityRollingWindow.availableLiquidity = (availableLiquidityRollingWindow.availableLiquidity.times(availableLiquidityRollingWindow.count)).minus(oldAvailableLiquidityLog.availableLiquidity).div(availableLiquidityRollingWindow.count);
+          }
+      }
+  }
+
+  availableLiquidityRollingWindow.save();
+  availableLiquidityLogEntry.availableLiquidityRollingWindow = availableLiquidityRollingWindow.id;
+  availableLiquidityLogEntry.save();
+}
 
 export function handleAssetSent(event: AssetSent): void {
   let assetSent = new AssetSentToUserLogEntry(event.transaction.hash.toHex());
-  assetSent.tokenAddress=event.params.asset;
-  assetSent.amount=event.params.amount;
-  assetSent.transferredAmount=event.params.transferredAmount;
-  assetSent.receiver=event.params.target;
-  assetSent.depositHash=event.params.depositHash;
-  assetSent.fromChainId=event.params.fromChainId;
+  assetSent.tokenAddress = event.params.asset;
+  assetSent.amount = event.params.amount;
+  assetSent.transferredAmount = event.params.transferredAmount;
+  assetSent.receiver = event.params.target;
+  assetSent.depositHash = event.params.depositHash;
+  assetSent.fromChainId = event.params.fromChainId;
+  assetSent.timestamp = event.block.timestamp;
 
   assetSent.save();
+  updateAvailableLiquidity(event.transaction.hash.toHex(), event.params.asset, event.block.timestamp, event.address);
 }
 
 export function handleDeposit(event: Deposit): void {
+  updateAvailableLiquidity(event.transaction.hash.toHex(), event.params.tokenAddress, event.block.timestamp, event.address);
   const deposit = new DepositEntity(event.transaction.hash.toHex());
   deposit.sender = event.params.from;
   deposit.tokenAddress = event.params.tokenAddress;
@@ -89,6 +163,7 @@ export function handleDeposit(event: Deposit): void {
   depositVolumeCumulativePerChainAndToken.cumulativeAmount += deposit.amount;
   depositVolumeCumulativePerChainAndToken.cumulativeRewardAmount += deposit.rewardAmount;
   depositVolumeCumulativePerChainAndToken.count += BigInt.fromI32(1);
+
 
   depositVolumeCumulativePerChainAndToken.save();
 
@@ -243,7 +318,6 @@ export function handleDeposit(event: Deposit): void {
 // export function handleEthReceived(event: EthReceived): void { }
 
 export function handleFeeDetails(event: FeeDetails): void {
-
   log.info("Inside Fee Details:", ["Feels good"]);
   // FeeDetail is the fundamental entity
   const feeDetailLogEntry = new FeeDetailLogEntry(event.transaction.hash.toHex());
