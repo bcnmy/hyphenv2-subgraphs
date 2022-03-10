@@ -14,10 +14,79 @@ import {
   DailyApy,
   AvailableLiquidityLogEntry,
   HourlyAvailableLiquidity,
-  RollingAvailableLiquidityForLast24Hour
+  RollingAvailableLiquidityForLast24Hour,
+  SuppliedLiquidityLogEntry,
+  HourlySuppliedLiquidity,
+  RollingSuppliedLiquidityForLast24Hour
 } from "../generated/schema"
 
 import { updateAvailableLiquidity } from "./mapping";
+
+export function updateSuppliedLiquidity(txId: string, tokenAddress: Address, timestamp: BigInt, eventAddress: Address): void {
+  const LiquidityProviderContract = LiquidityProviders.bind(eventAddress);
+  const currentSuppliedLiquidity = LiquidityProviderContract.getSuppliedLiquidityByToken(tokenAddress);
+
+  const logKey = `${txId}-${tokenAddress.toHex()}`;
+
+  let suppliedLiquidityLogEntry = SuppliedLiquidityLogEntry.load(logKey);
+  if (!suppliedLiquidityLogEntry) {
+    suppliedLiquidityLogEntry = new SuppliedLiquidityLogEntry(logKey);
+    suppliedLiquidityLogEntry.tokenAddress = tokenAddress;
+    suppliedLiquidityLogEntry.timestamp = timestamp;
+  } else {
+    suppliedLiquidityLogEntry.save();
+    return;
+  }
+
+  const epochModSecondsInAHour = timestamp.mod(BigInt.fromI32(3600));
+  const hourEpoch = timestamp.minus(epochModSecondsInAHour);
+
+  let hourlySuppliedLiquidity = HourlySuppliedLiquidity.load(`${tokenAddress.toHex()}-${hourEpoch.toString()}`);
+  if (!hourlySuppliedLiquidity) {
+    hourlySuppliedLiquidity = new HourlySuppliedLiquidity(tokenAddress.toHex());
+    hourlySuppliedLiquidity.suppliedLiquidity = BigInt.fromI32(0);
+    hourlySuppliedLiquidity.tokenAddress = tokenAddress;
+    hourlySuppliedLiquidity.timestamp = hourEpoch;
+    hourlySuppliedLiquidity.count = BigInt.fromI32(0);
+  }
+
+  hourlySuppliedLiquidity.count = hourlySuppliedLiquidity.count.plus(BigInt.fromI32(1));
+  hourlySuppliedLiquidity.suppliedLiquidity = (hourlySuppliedLiquidity.suppliedLiquidity.times(hourlySuppliedLiquidity.count)).plus(currentSuppliedLiquidity).div(hourlySuppliedLiquidity.count);
+  hourlySuppliedLiquidity.save();
+
+  let suppliedLiquidityRollingWindow = RollingSuppliedLiquidityForLast24Hour.load(tokenAddress.toHex());
+  if (!suppliedLiquidityRollingWindow) {
+    suppliedLiquidityRollingWindow = new RollingSuppliedLiquidityForLast24Hour(tokenAddress.toHex());
+    suppliedLiquidityRollingWindow.tokenAddress = tokenAddress;
+    suppliedLiquidityRollingWindow.suppliedLiquidity = BigInt.fromI32(0);
+    suppliedLiquidityRollingWindow.count = BigInt.fromI32(0);
+  }
+
+  suppliedLiquidityRollingWindow.count = suppliedLiquidityRollingWindow.count.plus(BigInt.fromI32(1));
+  suppliedLiquidityRollingWindow.suppliedLiquidity = (suppliedLiquidityRollingWindow.suppliedLiquidity.times(suppliedLiquidityRollingWindow.count)).plus(currentSuppliedLiquidity).div(suppliedLiquidityRollingWindow.count);
+
+  let oldSuppliedLiquidityLogs = suppliedLiquidityRollingWindow.logs;
+  if (oldSuppliedLiquidityLogs !== null) {
+    // sliding window calculation
+    for (let i = 0; i < oldSuppliedLiquidityLogs.length; i++) {
+      // for every feeDetailLogEntry in the rolling window, check if they are old enough to remove
+      // if so, then remove and also decrease their values from cumulative rolling window values
+      let oldSuppliedLiquidityLog = SuppliedLiquidityLogEntry.load(oldSuppliedLiquidityLogs[i]);
+      if (!oldSuppliedLiquidityLog) continue;
+      if (timestamp.minus(oldSuppliedLiquidityLog.timestamp) > BigInt.fromI32(3600)) {
+        oldSuppliedLiquidityLog.suppliedLiquidityRollingWindow = null;
+        oldSuppliedLiquidityLog.save();
+
+        suppliedLiquidityRollingWindow.count = suppliedLiquidityRollingWindow.count.minus(BigInt.fromI32(1));
+        suppliedLiquidityRollingWindow.suppliedLiquidity = (suppliedLiquidityRollingWindow.suppliedLiquidity.times(suppliedLiquidityRollingWindow.count)).minus(oldSuppliedLiquidityLog.suppliedLiquidity).div(suppliedLiquidityRollingWindow.count);
+      }
+    }
+  }
+
+  suppliedLiquidityRollingWindow.save();
+  suppliedLiquidityLogEntry.suppliedLiquidityRollingWindow = suppliedLiquidityRollingWindow.id;
+  suppliedLiquidityLogEntry.save();
+}
 
 export function handleCurrentLiquidityChanged(event: CurrentLiquidityChanged): void {
   updateAvailableLiquidity(event.transaction.hash.toHex(), event.params.token, event.block.timestamp, event.address);
@@ -26,11 +95,13 @@ export function handleCurrentLiquidityChanged(event: CurrentLiquidityChanged): v
 export function handleLiquidityAdded(event: LiquidityAdded): void {
   // When liquidity is added, the supplied liquidity increases, along with available liquidity
   updateAvailableLiquidity(event.transaction.hash.toHex(), event.params.tokenAddress, event.block.timestamp, event.address);
+  updateSuppliedLiquidity(event.transaction.hash.toHex(), event.params.tokenAddress, event.block.timestamp, event.address);
 }
 
 export function handleLiquidityRemoved(event: LiquidityRemoved): void {
   // When liquidity is removed, the supplied liquidity decreases, along with available liquidity
   updateAvailableLiquidity(event.transaction.hash.toHex(), event.params.tokenAddress, event.block.timestamp, event.address);
+  updateSuppliedLiquidity(event.transaction.hash.toHex(), event.params.tokenAddress, event.block.timestamp, event.address);
 }
 
 export function handleFeeAdded(event: FeeAdded): void {

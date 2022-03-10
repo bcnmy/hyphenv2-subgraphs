@@ -204,3 +204,27 @@ type RollingAvailableLiquidityForLast24Hour @entity {
   logs: [AvailableLiquidityLogEntry!]
     @derivedFrom(field: "availableLiquidityRollingWindow")
 }
+
+type IncentivePoolBalanceLogEntry @entity {
+  id: ID!
+  tokenAddress: Bytes!
+  timestamp: BigInt!
+  poolBalance: BigInt!
+  incentivePoolBalanceRollingWindow: RollingIncentivePoolBalanceForLast24Hour
+}
+type HourlyIncentivePoolBalance @entity {
+  id: ID!
+  timestamp: BigInt!
+  tokenAddress: Bytes!
+  poolBalance:BigInt!
+  count: BigInt!
+}
+
+type RollingIncentivePoolBalanceForLast24Hour @entity {
+  id: ID!
+  tokenAddress: Bytes!
+  poolBalance:BigInt!
+  count: BigInt!
+  logs: [IncentivePoolBalanceLogEntry!]
+    @derivedFrom(field: "incentivePoolBalanceRollingWindow")
+}

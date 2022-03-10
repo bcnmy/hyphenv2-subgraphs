@@ -47,12 +47,15 @@ import {
   RollingAvailableLiquidityForLast24Hour,
   SuppliedLiquidityLogEntry,
   HourlySuppliedLiquidity,
-  RollingSuppliedLiquidityForLast24Hour
+  RollingSuppliedLiquidityForLast24Hour,
+  IncentivePoolBalanceLogEntry,
+  HourlyIncentivePoolBalance,
+  RollingIncentivePoolBalanceForLast24Hour
 } from "../generated/schema"
 
 export function updateAvailableLiquidity(txId: string, tokenAddress: Address, timestamp: BigInt, eventAddress: Address): void {
   const liquidityPoolContract = LiquidityPool.bind(eventAddress);
-  const currentAvailableLiquiliquidity = liquidityPoolContract.getCurrentLiquidity(tokenAddress);
+  const currentAvailableLiquidity = liquidityPoolContract.getCurrentLiquidity(tokenAddress);
 
   const logKey = `${txId}-${tokenAddress.toHex()}`;
   let availableLiquidityLogEntry = AvailableLiquidityLogEntry.load(logKey);
@@ -61,6 +64,7 @@ export function updateAvailableLiquidity(txId: string, tokenAddress: Address, ti
     availableLiquidityLogEntry.tokenAddress = tokenAddress;
     availableLiquidityLogEntry.timestamp = timestamp;
   } else {
+    availableLiquidityLogEntry.availableLiquidity = currentAvailableLiquidity;
     availableLiquidityLogEntry.save();
     return;
   }
@@ -79,7 +83,7 @@ export function updateAvailableLiquidity(txId: string, tokenAddress: Address, ti
   }
 
   hourlyAvailableLiquidity.count = hourlyAvailableLiquidity.count.plus(BigInt.fromI32(1));
-  hourlyAvailableLiquidity.availableLiquidity = (hourlyAvailableLiquidity.availableLiquidity.times(hourlyAvailableLiquidity.count)).plus(currentAvailableLiquiliquidity).div(hourlyAvailableLiquidity.count);
+  hourlyAvailableLiquidity.availableLiquidity = (hourlyAvailableLiquidity.availableLiquidity.times(hourlyAvailableLiquidity.count)).plus(currentAvailableLiquidity).div(hourlyAvailableLiquidity.count);
   hourlyAvailableLiquidity.save();
 
 
@@ -92,7 +96,7 @@ export function updateAvailableLiquidity(txId: string, tokenAddress: Address, ti
   }
 
   availableLiquidityRollingWindow.count = availableLiquidityRollingWindow.count.plus(BigInt.fromI32(1));
-  availableLiquidityRollingWindow.availableLiquidity = (availableLiquidityRollingWindow.availableLiquidity.times(availableLiquidityRollingWindow.count)).plus(currentAvailableLiquiliquidity).div(availableLiquidityRollingWindow.count);
+  availableLiquidityRollingWindow.availableLiquidity = (availableLiquidityRollingWindow.availableLiquidity.times(availableLiquidityRollingWindow.count)).plus(currentAvailableLiquidity).div(availableLiquidityRollingWindow.count);
 
   let oldAvailableLiquidityLogs = availableLiquidityRollingWindow.logs;
   if (oldAvailableLiquidityLogs !== null) {
@@ -118,6 +122,8 @@ export function updateAvailableLiquidity(txId: string, tokenAddress: Address, ti
 }
 
 export function handleAssetSent(event: AssetSent): void {
+  updateIncentivePoolBalance(event.transaction.hash.toHex(), event.params.asset, event.block.timestamp, event.address);
+
   let assetSent = new AssetSentToUserLogEntry(event.transaction.hash.toHex());
   assetSent.tokenAddress = event.params.asset;
   assetSent.amount = event.params.amount;
@@ -132,6 +138,7 @@ export function handleAssetSent(event: AssetSent): void {
 }
 
 export function handleDeposit(event: Deposit): void {
+  updateIncentivePoolBalance(event.transaction.hash.toHex(), event.params.tokenAddress, event.block.timestamp, event.address);
   updateAvailableLiquidity(event.transaction.hash.toHex(), event.params.tokenAddress, event.block.timestamp, event.address);
   const deposit = new DepositEntity(event.transaction.hash.toHex());
   deposit.sender = event.params.from;
@@ -334,6 +341,7 @@ export function handleDeposit(event: Deposit): void {
 export function handleFeeDetails(event: FeeDetails): void {
   log.info("Inside Fee Details:", ["Feels good"]);
   // FeeDetail is the fundamental entity
+
   const feeDetailLogEntry = new FeeDetailLogEntry(event.transaction.hash.toHex());
   feeDetailLogEntry.timestamp = event.block.timestamp;
   feeDetailLogEntry.transferFee = event.params.transferFee;
@@ -454,69 +462,72 @@ export function handleFeeDetails(event: FeeDetails): void {
 
 }
 
-export function updateSuppliedLiquidity(txId: string, tokenAddress: Address, timestamp: BigInt, eventAddress:Address): void {
-  const LiquidityProviderContract = LiquidityProviders.bind(eventAddress);
-  const currentSuppliedLiquidity = LiquidityProviderContract.getSuppliedLiquidity(String);
+
+
+export function updateIncentivePoolBalance(txId: string, tokenAddress: Address, timestamp: BigInt, eventAddress: Address): void {
+  const liquidityPoolContract = LiquidityPool.bind(eventAddress);
+  const currentIncentivePoolBalance = liquidityPoolContract.incentivePool(tokenAddress);
 
   const logKey = `${txId}-${tokenAddress.toHex()}`;
-
-  let suppliedLiquidityLogEntry = SuppliedLiquidityLogEntry.load(logKey);
-  if (!suppliedLiquidityLogEntry) {
-    suppliedLiquidityLogEntry = new SuppliedLiquidityLogEntry(logKey);
-    suppliedLiquidityLogEntry.tokenAddress = tokenAddress;
-    suppliedLiquidityLogEntry.timestamp = timestamp;
+  let incentivePoolBalanceLogEntry = IncentivePoolBalanceLogEntry.load(logKey);
+  if (!incentivePoolBalanceLogEntry) {
+    incentivePoolBalanceLogEntry = new IncentivePoolBalanceLogEntry(logKey);
+    incentivePoolBalanceLogEntry.tokenAddress = tokenAddress;
+    incentivePoolBalanceLogEntry.timestamp = timestamp;
   } else {
-    suppliedLiquidityLogEntry.save();
+    incentivePoolBalanceLogEntry.poolBalance = currentIncentivePoolBalance;
+    incentivePoolBalanceLogEntry.save();
     return;
   }
+
 
   const epochModSecondsInAHour = timestamp.mod(BigInt.fromI32(3600));
   const hourEpoch = timestamp.minus(epochModSecondsInAHour);
 
-  let hourlySuppliedLiquidity = HourlySuppliedLiquidity.load(`${tokenAddress.toHex()}-${hourEpoch.toString()}`);
-  if (!hourlySuppliedLiquidity) {
-    hourlySuppliedLiquidity = new HourlySuppliedLiquidity(tokenAddress.toHex());
-    hourlySuppliedLiquidity.suppliedLiquidity = BigInt.fromI32(0);
-    hourlySuppliedLiquidity.tokenAddress = tokenAddress;
-    hourlySuppliedLiquidity.timestamp = hourEpoch;
-    hourlySuppliedLiquidity.count = BigInt.fromI32(0);
+  let hourlyIncentivePoolBalance = HourlyIncentivePoolBalance.load(`${tokenAddress.toHex()}-${hourEpoch.toString()}`);
+  if (!hourlyIncentivePoolBalance) {
+    hourlyIncentivePoolBalance = new HourlyIncentivePoolBalance(tokenAddress.toHex());
+    hourlyIncentivePoolBalance.poolBalance = BigInt.fromI32(0);
+    hourlyIncentivePoolBalance.tokenAddress = tokenAddress;
+    hourlyIncentivePoolBalance.timestamp = hourEpoch;
+    hourlyIncentivePoolBalance.count = BigInt.fromI32(0);
   }
 
-  hourlySuppliedLiquidity.count = hourlySuppliedLiquidity.count.plus(BigInt.fromI32(1));
-  hourlySuppliedLiquidity.suppliedLiquidity = (hourlySuppliedLiquidity.suppliedLiquidity.times(hourlySuppliedLiquidity.count)).plus(currentSuppliedLiquidity).div(hourlySuppliedLiquidity.count);
-  hourlySuppliedLiquidity.save();
+  hourlyIncentivePoolBalance.count = hourlyIncentivePoolBalance.count.plus(BigInt.fromI32(1));
+  hourlyIncentivePoolBalance.poolBalance = (hourlyIncentivePoolBalance.poolBalance.times(hourlyIncentivePoolBalance.count)).plus(currentIncentivePoolBalance).div(hourlyIncentivePoolBalance.count);
+  hourlyIncentivePoolBalance.save();
 
-  let suppliedLiquidityRollingWindow = RollingSuppliedLiquidityForLast24Hour.load(tokenAddress.toHex());
-  if (!suppliedLiquidityRollingWindow) {
-    suppliedLiquidityRollingWindow = new RollingSuppliedLiquidityForLast24Hour(tokenAddress.toHex());
-    suppliedLiquidityRollingWindow.tokenAddress = tokenAddress;
-    suppliedLiquidityRollingWindow.suppliedLiquidity = BigInt.fromI32(0);
-    suppliedLiquidityRollingWindow.count = BigInt.fromI32(0);
+
+  let incentivePoolBalanceRollingWindow = RollingIncentivePoolBalanceForLast24Hour.load(tokenAddress.toHex());
+  if (!incentivePoolBalanceRollingWindow) {
+    incentivePoolBalanceRollingWindow = new RollingIncentivePoolBalanceForLast24Hour(tokenAddress.toHex());
+    incentivePoolBalanceRollingWindow.tokenAddress = tokenAddress;
+    incentivePoolBalanceRollingWindow.poolBalance = BigInt.fromI32(0);
+    incentivePoolBalanceRollingWindow.count = BigInt.fromI32(0);
   }
 
-  suppliedLiquidityRollingWindow.count = suppliedLiquidityRollingWindow.count.plus(BigInt.fromI32(1));
-  suppliedLiquidityRollingWindow.suppliedLiquidity = (suppliedLiquidityRollingWindow.suppliedLiquidity.times(suppliedLiquidityRollingWindow.count)).plus(currentSuppliedLiquidity).div(suppliedLiquidityRollingWindow.count);
+  incentivePoolBalanceRollingWindow.count = incentivePoolBalanceRollingWindow.count.plus(BigInt.fromI32(1));
+  incentivePoolBalanceRollingWindow.poolBalance = (incentivePoolBalanceRollingWindow.poolBalance.times(incentivePoolBalanceRollingWindow.count)).plus(currentIncentivePoolBalance).div(incentivePoolBalanceRollingWindow.count);
 
-  let oldSuppliedLiquidityLogs = suppliedLiquidityRollingWindow.logs;
-  if (oldSuppliedLiquidityLogs !== null) {
+  let oldIncentivePoolBalanceLogs = incentivePoolBalanceRollingWindow.logs;
+  if (oldIncentivePoolBalanceLogs !== null) {
     // sliding window calculation
-    for (let i = 0; i < oldSuppliedLiquidityLogs.length; i++) {
+    for (let i = 0; i < oldIncentivePoolBalanceLogs.length; i++) {
       // for every feeDetailLogEntry in the rolling window, check if they are old enough to remove
       // if so, then remove and also decrease their values from cumulative rolling window values
-      let oldSuppliedLiquidityLog = SuppliedLiquidityLogEntry.load(oldSuppliedLiquidityLogs[i]);
-      if (!oldSuppliedLiquidityLog) continue;
-      if (timestamp.minus(oldSuppliedLiquidityLog.timestamp) > BigInt.fromI32(3600)) {
-        oldSuppliedLiquidityLog.suppliedLiquidityRollingWindow = null;
-        oldSuppliedLiquidityLog.save();
+      let oldIncentivePoolBalanceLog = IncentivePoolBalanceLogEntry.load(oldIncentivePoolBalanceLogs[i]);
+      if (!oldIncentivePoolBalanceLog) continue;
+      if (timestamp.minus(oldIncentivePoolBalanceLog.timestamp) > BigInt.fromI32(3600)) {
+        oldIncentivePoolBalanceLog.incentivePoolBalanceRollingWindow = null;
+        oldIncentivePoolBalanceLog.save();
 
-        suppliedLiquidityRollingWindow.count = suppliedLiquidityRollingWindow.count.minus(BigInt.fromI32(1));
-        suppliedLiquidityRollingWindow.suppliedLiquidity = (suppliedLiquidityRollingWindow.suppliedLiquidity.times(suppliedLiquidityRollingWindow.count)).minus(oldSuppliedLiquidityLog.suppliedLiquidity).div(suppliedLiquidityRollingWindow.count);
+        incentivePoolBalanceRollingWindow.count = incentivePoolBalanceRollingWindow.count.minus(BigInt.fromI32(1));
+        incentivePoolBalanceRollingWindow.poolBalance = (incentivePoolBalanceRollingWindow.poolBalance.times(incentivePoolBalanceRollingWindow.count)).minus(oldIncentivePoolBalanceLog.poolBalance).div(incentivePoolBalanceRollingWindow.count);
       }
     }
   }
 
-  suppliedLiquidityRollingWindow.save();
-  suppliedLiquidityLogEntry.suppliedLiquidityRollingWindow = suppliedLiquidityRollingWindow.id;
-  suppliedLiquidityLogEntry.save();
+  incentivePoolBalanceRollingWindow.save();
+  incentivePoolBalanceLogEntry.incentivePoolBalanceRollingWindow = incentivePoolBalanceRollingWindow.id;
+  incentivePoolBalanceLogEntry.save();
 }
-
