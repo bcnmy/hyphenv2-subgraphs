@@ -1,4 +1,4 @@
-import { Address, BigInt, log } from "@graphprotocol/graph-ts"
+import { Address, BigInt, log, BigDecimal } from "@graphprotocol/graph-ts"
 import {
   LiquidityPool,
   AssetSent,
@@ -15,7 +15,19 @@ import {
   Unpaused
 } from "../generated/LiquidityPool/LiquidityPool"
 
+// import { LiquidityPool } from "../generated/LiquidityPool/LiquidityPool";
 import {
+  LiquidityAdded,
+  LiquidityRemoved,
+  FeeAdded,
+  LiquidityProviders,
+  CurrentLiquidityChanged
+} from "../generated/LiquidityProviders/LiquidityProviders"
+
+import {
+  TokenPriceInLPSharesLog,
+  RollingApyFor24Hour,
+  DailyApy,
   Deposit as DepositEntity,
   DailyDepositVolume,
   DepositVolumeCumulative,
@@ -35,8 +47,6 @@ import {
   RollingAvailableLiquidityForLast24Hour
 } from "../generated/schema"
 
-// import { updateAvailableLiquidity } from "./liquidity";
-
 export function updateAvailableLiquidity(txId: string, tokenAddress: Address, timestamp: BigInt, eventAddress: Address): void {
   const liquidityPoolContract = LiquidityPool.bind(eventAddress);
   const currentAvailableLiquiliquidity = liquidityPoolContract.getCurrentLiquidity(tokenAddress);
@@ -44,12 +54,12 @@ export function updateAvailableLiquidity(txId: string, tokenAddress: Address, ti
   const logKey = `${txId}-${tokenAddress.toHex()}`;
   let availableLiquidityLogEntry = AvailableLiquidityLogEntry.load(logKey);
   if (!availableLiquidityLogEntry) {
-      availableLiquidityLogEntry = new AvailableLiquidityLogEntry(logKey);
-      availableLiquidityLogEntry.tokenAddress = tokenAddress;
-      availableLiquidityLogEntry.timestamp = timestamp;
+    availableLiquidityLogEntry = new AvailableLiquidityLogEntry(logKey);
+    availableLiquidityLogEntry.tokenAddress = tokenAddress;
+    availableLiquidityLogEntry.timestamp = timestamp;
   } else {
-      availableLiquidityLogEntry.save();
-      return;
+    availableLiquidityLogEntry.save();
+    return;
   }
 
   const epochModSecondsInAHour = timestamp.mod(BigInt.fromI32(3600));
@@ -57,11 +67,11 @@ export function updateAvailableLiquidity(txId: string, tokenAddress: Address, ti
 
   let hourlyAvailableLiquidity = HourlyAvailableLiquidity.load(`${tokenAddress.toHex()}-${hourEpoch.toString()}`);
   if (!hourlyAvailableLiquidity) {
-      hourlyAvailableLiquidity = new HourlyAvailableLiquidity(tokenAddress.toHex());
-      hourlyAvailableLiquidity.availableLiquidity = BigInt.fromI32(0);
-      hourlyAvailableLiquidity.tokenAddress = tokenAddress;
-      hourlyAvailableLiquidity.timestamp = hourEpoch;
-      hourlyAvailableLiquidity.count = BigInt.fromI32(0);
+    hourlyAvailableLiquidity = new HourlyAvailableLiquidity(tokenAddress.toHex());
+    hourlyAvailableLiquidity.availableLiquidity = BigInt.fromI32(0);
+    hourlyAvailableLiquidity.tokenAddress = tokenAddress;
+    hourlyAvailableLiquidity.timestamp = hourEpoch;
+    hourlyAvailableLiquidity.count = BigInt.fromI32(0);
   }
 
   hourlyAvailableLiquidity.count = hourlyAvailableLiquidity.count.plus(BigInt.fromI32(1));
@@ -71,10 +81,10 @@ export function updateAvailableLiquidity(txId: string, tokenAddress: Address, ti
 
   let availableLiquidityRollingWindow = RollingAvailableLiquidityForLast24Hour.load(tokenAddress.toHex());
   if (!availableLiquidityRollingWindow) {
-      availableLiquidityRollingWindow = new RollingAvailableLiquidityForLast24Hour(tokenAddress.toHex());
-      availableLiquidityRollingWindow.tokenAddress = tokenAddress;
-      availableLiquidityRollingWindow.availableLiquidity = BigInt.fromI32(0);
-      availableLiquidityRollingWindow.count = BigInt.fromI32(0);
+    availableLiquidityRollingWindow = new RollingAvailableLiquidityForLast24Hour(tokenAddress.toHex());
+    availableLiquidityRollingWindow.tokenAddress = tokenAddress;
+    availableLiquidityRollingWindow.availableLiquidity = BigInt.fromI32(0);
+    availableLiquidityRollingWindow.count = BigInt.fromI32(0);
   }
 
   availableLiquidityRollingWindow.count = availableLiquidityRollingWindow.count.plus(BigInt.fromI32(1));
@@ -82,20 +92,20 @@ export function updateAvailableLiquidity(txId: string, tokenAddress: Address, ti
 
   let oldAvailableLiquidityLogs = availableLiquidityRollingWindow.logs;
   if (oldAvailableLiquidityLogs !== null) {
-      // sliding window calculation
-      for (let i = 0; i < oldAvailableLiquidityLogs.length; i++) {
-          // for every feeDetailLogEntry in the rolling window, check if they are old enough to remove
-          // if so, then remove and also decrease their values from cumulative rolling window values
-          let oldAvailableLiquidityLog = AvailableLiquidityLogEntry.load(oldAvailableLiquidityLogs[i]);
-          if (!oldAvailableLiquidityLog) continue;
-          if (timestamp.minus(oldAvailableLiquidityLog.timestamp) > BigInt.fromI32(3600)) {
-              oldAvailableLiquidityLog.availableLiquidityRollingWindow = null;
-              oldAvailableLiquidityLog.save();
+    // sliding window calculation
+    for (let i = 0; i < oldAvailableLiquidityLogs.length; i++) {
+      // for every feeDetailLogEntry in the rolling window, check if they are old enough to remove
+      // if so, then remove and also decrease their values from cumulative rolling window values
+      let oldAvailableLiquidityLog = AvailableLiquidityLogEntry.load(oldAvailableLiquidityLogs[i]);
+      if (!oldAvailableLiquidityLog) continue;
+      if (timestamp.minus(oldAvailableLiquidityLog.timestamp) > BigInt.fromI32(3600)) {
+        oldAvailableLiquidityLog.availableLiquidityRollingWindow = null;
+        oldAvailableLiquidityLog.save();
 
-              availableLiquidityRollingWindow.count = availableLiquidityRollingWindow.count.minus(BigInt.fromI32(1));
-              availableLiquidityRollingWindow.availableLiquidity = (availableLiquidityRollingWindow.availableLiquidity.times(availableLiquidityRollingWindow.count)).minus(oldAvailableLiquidityLog.availableLiquidity).div(availableLiquidityRollingWindow.count);
-          }
+        availableLiquidityRollingWindow.count = availableLiquidityRollingWindow.count.minus(BigInt.fromI32(1));
+        availableLiquidityRollingWindow.availableLiquidity = (availableLiquidityRollingWindow.availableLiquidity.times(availableLiquidityRollingWindow.count)).minus(oldAvailableLiquidityLog.availableLiquidity).div(availableLiquidityRollingWindow.count);
       }
+    }
   }
 
   availableLiquidityRollingWindow.save();
@@ -439,23 +449,3 @@ export function handleFeeDetails(event: FeeDetails): void {
   log.info("today fee saved", ["Feels good"]);
 
 }
-
-// export function handleGasFeeWithdraw(event: GasFeeWithdraw): void { }
-
-// export function handleLiquidityProvidersChanged(
-//   event: LiquidityProvidersChanged
-// ): void { }
-
-// export function handleOwnershipTransferred(event: OwnershipTransferred): void { }
-
-// export function handlePaused(event: Paused): void { }
-
-// export function handlePauserChanged(event: PauserChanged): void { }
-
-// export function handleReceived(event: Received): void { }
-
-// export function handleTrustedForwarderChanged(
-//   event: TrustedForwarderChanged
-// ): void { }
-
-// export function handleUnpaused(event: Unpaused): void { }
