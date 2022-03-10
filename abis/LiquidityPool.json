@@ -130,6 +130,12 @@
         "internalType": "uint256",
         "name": "gasFee",
         "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "transferredToken",
+        "type": "address"
       }
     ],
     "name": "FeeDetails",

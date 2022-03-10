@@ -36,7 +36,7 @@ dataSources:
           handler: handleDeposit
         # - event: EthReceived(address,uint256)
         # handler: handleEthReceived
-        - event: FeeDetails(indexed uint256,indexed uint256,indexed uint256)
+        - event: FeeDetails(indexed uint256,indexed uint256,indexed uint256,address)
           handler: handleFeeDetails
         # - event: GasFeeWithdraw(indexed address,indexed address,indexed uint256)
         #   handler: handleGasFeeWithdraw

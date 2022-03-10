@@ -225,21 +225,34 @@ export function handleDeposit(event: Deposit): void {
   deposit.rollingWindowPerChainAndToken = slidingWindowPerChainAndToken.id;
 
   let oldDeposits = slidingWindow.deposits;
+  log.info("Before the garbage loop", []);
   if (oldDeposits !== null) {
+    log.info("Old deposits is not null", []);
+
     // sliding window calculation
     for (let i = 0; i < oldDeposits.length; i++) {
       // for every feeDetailLogEntry in the rolling window, check if they are old enough to remove
       // if so, then remove and also decrease their values from cumulative rolling window values
       let oldDeposit = DepositEntity.load(oldDeposits[i]);
-      if (!oldDeposit) continue;
-      if (deposit.timestamp.minus(oldDeposit.timestamp) > BigInt.fromI32(86400)) {
+      log.info("Loaded old deposits", []);
+      if (!oldDeposit) {
+        log.info("no old deposits exist", []);
+      }
+      else if (deposit.timestamp.minus(oldDeposit.timestamp) > BigInt.fromI32(86400)) {
+        log.info("Old deposit cleared", []);
         oldDeposit.rollingWindow = null;
         oldDeposit.save();
         slidingWindow.cumulativeRewardAmount = slidingWindow.cumulativeRewardAmount.minus(oldDeposit.rewardAmount);
         slidingWindow.cumulativeAmount = slidingWindow.cumulativeAmount.minus(oldDeposit.amount);
         slidingWindow.count -= BigInt.fromI32(1);
+      } else {
+        log.info("Old deposit not cleared {} {}", [oldDeposit.timestamp.toString(), deposit.timestamp.minus(oldDeposit.timestamp).toString()]);
       }
+      log.info("Exiting for loop", []);
     }
+    log.info("Didnt enter if", []);
+  } else {
+    log.info("garbage loop not enterred", []);
   }
   slidingWindow.save();
 
