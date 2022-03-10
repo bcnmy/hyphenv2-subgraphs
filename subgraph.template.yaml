@@ -72,6 +72,8 @@ dataSources:
       abis:
         - name: LiquidityProviders
           file: ./abis/LiquidityProviders.json
+        - name: LiquidityPool
+          file: ./abis/LiquidityPool.json
       eventHandlers:
         - event: LiquidityAdded(indexed address,indexed uint256,indexed address)
           handler: handleLiquidityAdded
