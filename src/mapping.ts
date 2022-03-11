@@ -351,6 +351,7 @@ export function handleFeeDetails(event: FeeDetails): void {
   feeDetailLogEntry.transferFee = event.params.transferFee;
   feeDetailLogEntry.lpFee = event.params.lpFee;
   feeDetailLogEntry.gasFee = event.params.gasFee;
+  feeDetailLogEntry.tokenAddress = event.params.transferredToken;
   log.info("Fee Detail log entry populated", ["Feels good"]);
 
 
@@ -363,14 +364,15 @@ export function handleFeeDetails(event: FeeDetails): void {
   // log.info("tag:", [deposit.tag.toString()]);
 
   // FeeCumulative is the cumulative all time data
-  let feeCumulative = FeeCumulative.load("0");
+  let feeCumulative = FeeCumulative.load(feeDetailLogEntry.tokenAddress.toHex());
 
   if (!feeCumulative) {
-    feeCumulative = new FeeCumulative("0");
+    feeCumulative = new FeeCumulative(feeDetailLogEntry.tokenAddress.toHex());
     feeCumulative.lpFee = BigInt.fromI32(0);
     feeCumulative.gasFee = BigInt.fromI32(0);
     feeCumulative.transferFee = BigInt.fromI32(0);
     feeCumulative.count = BigInt.fromI32(0);
+    feeCumulative.tokenAddress = feeDetailLogEntry.tokenAddress;
   }
 
   feeCumulative.lpFee = feeCumulative.lpFee.plus(feeDetailLogEntry.lpFee);
@@ -384,13 +386,14 @@ export function handleFeeDetails(event: FeeDetails): void {
 
 
   // RollingFeeDetailsLogsForLast24Hour only captures data for the last 24 hours, counting from the last event
-  let slidingWindow = RollingFeeDetailsLogsForLast24Hour.load("0");
+  let slidingWindow = RollingFeeDetailsLogsForLast24Hour.load(feeDetailLogEntry.tokenAddress.toHex());
 
   if (!slidingWindow) {
-    slidingWindow = new RollingFeeDetailsLogsForLast24Hour("0");
+    slidingWindow = new RollingFeeDetailsLogsForLast24Hour(feeDetailLogEntry.tokenAddress.toHex());
     slidingWindow.cumulativeGasFee = BigInt.fromI32(0);
     slidingWindow.cumulativeLpFee = BigInt.fromI32(0);
     slidingWindow.cumulativeTransferFee = BigInt.fromI32(0);
+    slidingWindow.tokenAddress = feeDetailLogEntry.tokenAddress;
     slidingWindow.count = BigInt.fromI32(0);
     slidingWindow.logs = new Array<string>();
   }
@@ -445,13 +448,14 @@ export function handleFeeDetails(event: FeeDetails): void {
 
   const dayEpoch = feeDetailLogEntry.timestamp.minus(epochModSecondsInADay);
 
-  let todayFeeDetailsLog = DailyFeeDetailsLog.load(dayEpoch.toString());
+  let todayFeeDetailsLog = DailyFeeDetailsLog.load(`${dayEpoch.toString()}-${feeDetailLogEntry.tokenAddress.toHex()}`);
 
   if (!todayFeeDetailsLog) {
-    todayFeeDetailsLog = new DailyFeeDetailsLog(dayEpoch.toString());
+    todayFeeDetailsLog = new DailyFeeDetailsLog(`${dayEpoch.toString()}-${feeDetailLogEntry.tokenAddress.toHex()}`);
     todayFeeDetailsLog.cumulativeGasFee = BigInt.fromI32(0);
     todayFeeDetailsLog.cumulativeLpFee = BigInt.fromI32(0);
     todayFeeDetailsLog.cumulativeTransferFee = BigInt.fromI32(0);
+    todayFeeDetailsLog.tokenAddress = feeDetailLogEntry.tokenAddress;
     todayFeeDetailsLog.count = BigInt.fromI32(0);
     todayFeeDetailsLog.timestamp = dayEpoch;
   }
@@ -465,7 +469,6 @@ export function handleFeeDetails(event: FeeDetails): void {
   log.info("fee detail log entry saved", ["Feels good"]);
   todayFeeDetailsLog.save();
   log.info("today fee saved", ["Feels good"]);
-
 }
 
 

@@ -7,6 +7,7 @@ type FeeDetailLogEntry @entity {
   transferFee: BigInt!
   gasFee: BigInt!
   timestamp: BigInt!
+  tokenAddress: Bytes!
 }
 
 type FeeCumulative @entity {
@@ -15,6 +16,7 @@ type FeeCumulative @entity {
   transferFee: BigInt!
   gasFee: BigInt!
   count: BigInt!
+  tokenAddress: Bytes!
 }
 
 type RollingFeeDetailsLogsForLast24Hour @entity {
@@ -24,6 +26,7 @@ type RollingFeeDetailsLogsForLast24Hour @entity {
   cumulativeGasFee: BigInt!
   logs: [String!]!
   count: BigInt!
+  tokenAddress: Bytes!
 }
 
 type DailyFeeDetailsLog @entity {
@@ -33,6 +36,7 @@ type DailyFeeDetailsLog @entity {
   cumulativeGasFee: BigInt!
   count: BigInt!
   timestamp: BigInt!
+  tokenAddress: Bytes!
 }
 
 type Deposit @entity {

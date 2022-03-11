@@ -20,6 +20,7 @@ export class FeeDetailLogEntry extends Entity {
     this.set("transferFee", Value.fromBigInt(BigInt.zero()));
     this.set("gasFee", Value.fromBigInt(BigInt.zero()));
     this.set("timestamp", Value.fromBigInt(BigInt.zero()));
+    this.set("tokenAddress", Value.fromBytes(Bytes.empty()));
   }
 
   save(): void {
@@ -85,6 +86,15 @@ export class FeeDetailLogEntry extends Entity {
   set timestamp(value: BigInt) {
     this.set("timestamp", Value.fromBigInt(value));
   }
+
+  get tokenAddress(): Bytes {
+    let value = this.get("tokenAddress");
+    return value!.toBytes();
+  }
+
+  set tokenAddress(value: Bytes) {
+    this.set("tokenAddress", Value.fromBytes(value));
+  }
 }
 
 export class FeeCumulative extends Entity {
@@ -96,6 +106,7 @@ export class FeeCumulative extends Entity {
     this.set("transferFee", Value.fromBigInt(BigInt.zero()));
     this.set("gasFee", Value.fromBigInt(BigInt.zero()));
     this.set("count", Value.fromBigInt(BigInt.zero()));
+    this.set("tokenAddress", Value.fromBytes(Bytes.empty()));
   }
 
   save(): void {
@@ -159,6 +170,15 @@ export class FeeCumulative extends Entity {
   set count(value: BigInt) {
     this.set("count", Value.fromBigInt(value));
   }
+
+  get tokenAddress(): Bytes {
+    let value = this.get("tokenAddress");
+    return value!.toBytes();
+  }
+
+  set tokenAddress(value: Bytes) {
+    this.set("tokenAddress", Value.fromBytes(value));
+  }
 }
 
 export class RollingFeeDetailsLogsForLast24Hour extends Entity {
@@ -171,6 +191,7 @@ export class RollingFeeDetailsLogsForLast24Hour extends Entity {
     this.set("cumulativeGasFee", Value.fromBigInt(BigInt.zero()));
     this.set("logs", Value.fromStringArray(new Array(0)));
     this.set("count", Value.fromBigInt(BigInt.zero()));
+    this.set("tokenAddress", Value.fromBytes(Bytes.empty()));
   }
 
   save(): void {
@@ -248,6 +269,15 @@ export class RollingFeeDetailsLogsForLast24Hour extends Entity {
   set count(value: BigInt) {
     this.set("count", Value.fromBigInt(value));
   }
+
+  get tokenAddress(): Bytes {
+    let value = this.get("tokenAddress");
+    return value!.toBytes();
+  }
+
+  set tokenAddress(value: Bytes) {
+    this.set("tokenAddress", Value.fromBytes(value));
+  }
 }
 
 export class DailyFeeDetailsLog extends Entity {
@@ -260,6 +290,7 @@ export class DailyFeeDetailsLog extends Entity {
     this.set("cumulativeGasFee", Value.fromBigInt(BigInt.zero()));
     this.set("count", Value.fromBigInt(BigInt.zero()));
     this.set("timestamp", Value.fromBigInt(BigInt.zero()));
+    this.set("tokenAddress", Value.fromBytes(Bytes.empty()));
   }
 
   save(): void {
@@ -333,6 +364,15 @@ export class DailyFeeDetailsLog extends Entity {
 
   set timestamp(value: BigInt) {
     this.set("timestamp", Value.fromBigInt(value));
+  }
+
+  get tokenAddress(): Bytes {
+    let value = this.get("tokenAddress");
+    return value!.toBytes();
+  }
+
+  set tokenAddress(value: Bytes) {
+    this.set("tokenAddress", Value.fromBytes(value));
   }
 }
 
