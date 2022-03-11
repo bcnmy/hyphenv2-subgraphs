@@ -60,31 +60,32 @@ export function updateSuppliedLiquidity(txId: string, tokenAddress: Address, tim
     suppliedLiquidityRollingWindow.tokenAddress = tokenAddress;
     suppliedLiquidityRollingWindow.suppliedLiquidity = BigInt.fromI32(0);
     suppliedLiquidityRollingWindow.count = BigInt.fromI32(0);
+    suppliedLiquidityRollingWindow.logs = new Array<string>();
   }
 
   suppliedLiquidityRollingWindow.count = suppliedLiquidityRollingWindow.count.plus(BigInt.fromI32(1));
   suppliedLiquidityRollingWindow.suppliedLiquidity = (suppliedLiquidityRollingWindow.suppliedLiquidity.times(suppliedLiquidityRollingWindow.count)).plus(currentSuppliedLiquidity).div(suppliedLiquidityRollingWindow.count);
 
   let oldSuppliedLiquidityLogs = suppliedLiquidityRollingWindow.logs;
-  if (oldSuppliedLiquidityLogs !== null) {
-    // sliding window calculation
-    for (let i = 0; i < oldSuppliedLiquidityLogs.length; i++) {
-      // for every feeDetailLogEntry in the rolling window, check if they are old enough to remove
-      // if so, then remove and also decrease their values from cumulative rolling window values
-      let oldSuppliedLiquidityLog = SuppliedLiquidityLogEntry.load(oldSuppliedLiquidityLogs[i]);
-      if (!oldSuppliedLiquidityLog) continue;
-      if (timestamp.minus(oldSuppliedLiquidityLog.timestamp) > BigInt.fromI32(3600)) {
-        oldSuppliedLiquidityLog.suppliedLiquidityRollingWindow = null;
-        oldSuppliedLiquidityLog.save();
+  let newSuppliedLiquidityLogs = new Array<string>();
+  newSuppliedLiquidityLogs.push(suppliedLiquidityLogEntry.id);
 
-        suppliedLiquidityRollingWindow.count = suppliedLiquidityRollingWindow.count.minus(BigInt.fromI32(1));
-        suppliedLiquidityRollingWindow.suppliedLiquidity = (suppliedLiquidityRollingWindow.suppliedLiquidity.times(suppliedLiquidityRollingWindow.count)).minus(oldSuppliedLiquidityLog.suppliedLiquidity).div(suppliedLiquidityRollingWindow.count);
-      }
+  // sliding window calculation
+  for (let i = 0; i < oldSuppliedLiquidityLogs.length; i++) {
+    // for every feeDetailLogEntry in the rolling window, check if they are old enough to remove
+    // if so, then remove and also decrease their values from cumulative rolling window values
+    let oldSuppliedLiquidityLog = SuppliedLiquidityLogEntry.load(oldSuppliedLiquidityLogs[i]);
+    if (!oldSuppliedLiquidityLog) continue;
+    if (timestamp.minus(oldSuppliedLiquidityLog.timestamp) > BigInt.fromI32(3600)) {
+      suppliedLiquidityRollingWindow.count = suppliedLiquidityRollingWindow.count.minus(BigInt.fromI32(1));
+      suppliedLiquidityRollingWindow.suppliedLiquidity = (suppliedLiquidityRollingWindow.suppliedLiquidity.times(suppliedLiquidityRollingWindow.count)).minus(oldSuppliedLiquidityLog.suppliedLiquidity).div(suppliedLiquidityRollingWindow.count);
+    } else {
+      newSuppliedLiquidityLogs.push(oldSuppliedLiquidityLog.id);
     }
   }
 
+  suppliedLiquidityRollingWindow.logs = newSuppliedLiquidityLogs;
   suppliedLiquidityRollingWindow.save();
-  suppliedLiquidityLogEntry.suppliedLiquidityRollingWindow = suppliedLiquidityRollingWindow.id;
   suppliedLiquidityLogEntry.save();
 }
 
@@ -124,32 +125,33 @@ export function handleFeeAdded(event: FeeAdded): void {
     rollingApyFor24Hour = new RollingApyFor24Hour(tokenPriceInLPSharesLog.tokenAddress.toHexString());
     rollingApyFor24Hour.firstTokenPriceInLPShares = currentTokenPriceInLPShares;
     rollingApyFor24Hour.tokenAddress = tokenPriceInLPSharesLog.tokenAddress;
+    rollingApyFor24Hour.lpLogs = new Array<string>();
   }
 
   let oldLpLogs = rollingApyFor24Hour.lpLogs;
-  // window sliding logic
-  if (oldLpLogs !== null) {
-    // log.info("Enterred loop, array length {}", [oldLpLogs.length.toString()]);
-    for (let i = 0, windowSearchComplete = false; i < oldLpLogs.length && !windowSearchComplete; i++) {
-      let oldLpLog = TokenPriceInLPSharesLog.load(oldLpLogs[i]);
+
+  while (true) {
+    if (oldLpLogs.length > 0) {
+      let oldLpLog = TokenPriceInLPSharesLog.load(oldLpLogs[0]);
       if (!oldLpLog) continue;
-      if (oldLpLog.timestamp.minus(tokenPriceInLPSharesLog.timestamp) > BigInt.fromI32(86400)) {
-        // log.info("Found old log, removing", []);
-        oldLpLog.rollingApyWindow = null;
-        oldLpLog.save();
+      if (tokenPriceInLPSharesLog.timestamp.minus(oldLpLog.timestamp) > BigInt.fromI32(86400)) {
+        log.info("Found old log, removing", []);
+        oldLpLogs.shift();
       } else {
-        // log.info("Found first okay log, keeping firstTokenPriceInLPShares:", [oldLpLog.tokenPriceInLPShares.toString()]);
+        log.info("Found first okay log, keeping firstTokenPriceInLPShares:", [oldLpLog.tokenPriceInLPShares.toString()]);
         rollingApyFor24Hour.lastTokenPriceInLPShares = oldLpLog.tokenPriceInLPShares;
-        windowSearchComplete = true;
+        break;
       }
+    } else {
+      rollingApyFor24Hour.lastTokenPriceInLPShares = currentTokenPriceInLPShares;
+      break;
     }
-  } else {
-    // log.info("Didnt enter loop because no array", []);
-    rollingApyFor24Hour.lastTokenPriceInLPShares = currentTokenPriceInLPShares;
   }
 
-  tokenPriceInLPSharesLog.rollingApyWindow = rollingApyFor24Hour.id;
   rollingApyFor24Hour.apy = calculateApy(rollingApyFor24Hour.firstTokenPriceInLPShares, rollingApyFor24Hour.lastTokenPriceInLPShares);
+
+  oldLpLogs.push(tokenPriceInLPSharesLog.id);
+  rollingApyFor24Hour.lpLogs = oldLpLogs;
 
   // daily calculation
   const todayApyId = `${todayEpoch}-${event.params.tokenAddress.toHexString()}`;

@@ -93,31 +93,31 @@ export function updateAvailableLiquidity(txId: string, tokenAddress: Address, ti
     availableLiquidityRollingWindow.tokenAddress = tokenAddress;
     availableLiquidityRollingWindow.availableLiquidity = BigInt.fromI32(0);
     availableLiquidityRollingWindow.count = BigInt.fromI32(0);
+    availableLiquidityRollingWindow.logs = new Array<string>();
   }
 
   availableLiquidityRollingWindow.count = availableLiquidityRollingWindow.count.plus(BigInt.fromI32(1));
   availableLiquidityRollingWindow.availableLiquidity = (availableLiquidityRollingWindow.availableLiquidity.times(availableLiquidityRollingWindow.count)).plus(currentAvailableLiquidity).div(availableLiquidityRollingWindow.count);
 
   let oldAvailableLiquidityLogs = availableLiquidityRollingWindow.logs;
-  if (oldAvailableLiquidityLogs !== null) {
-    // sliding window calculation
-    for (let i = 0; i < oldAvailableLiquidityLogs.length; i++) {
-      // for every feeDetailLogEntry in the rolling window, check if they are old enough to remove
-      // if so, then remove and also decrease their values from cumulative rolling window values
-      let oldAvailableLiquidityLog = AvailableLiquidityLogEntry.load(oldAvailableLiquidityLogs[i]);
-      if (!oldAvailableLiquidityLog) continue;
-      if (timestamp.minus(oldAvailableLiquidityLog.timestamp) > BigInt.fromI32(3600)) {
-        oldAvailableLiquidityLog.availableLiquidityRollingWindow = null;
-        oldAvailableLiquidityLog.save();
+  let newAvailableLiquidityLogs = new Array<string>();
+  newAvailableLiquidityLogs.push(availableLiquidityLogEntry.id);
 
-        availableLiquidityRollingWindow.count = availableLiquidityRollingWindow.count.minus(BigInt.fromI32(1));
-        availableLiquidityRollingWindow.availableLiquidity = (availableLiquidityRollingWindow.availableLiquidity.times(availableLiquidityRollingWindow.count)).minus(oldAvailableLiquidityLog.availableLiquidity).div(availableLiquidityRollingWindow.count);
-      }
+  // sliding window calculation
+  for (let i = 0; i < oldAvailableLiquidityLogs.length; i++) {
+    // for every feeDetailLogEntry in the rolling window, check if they are old enough to remove
+    // if so, then remove and also decrease their values from cumulative rolling window values
+    let oldAvailableLiquidityLog = AvailableLiquidityLogEntry.load(oldAvailableLiquidityLogs[i]);
+    if (!oldAvailableLiquidityLog) continue;
+    if (timestamp.minus(oldAvailableLiquidityLog.timestamp) > BigInt.fromI32(3600)) {
+      availableLiquidityRollingWindow.count = availableLiquidityRollingWindow.count.minus(BigInt.fromI32(1));
+      availableLiquidityRollingWindow.availableLiquidity = (availableLiquidityRollingWindow.availableLiquidity.times(availableLiquidityRollingWindow.count)).minus(oldAvailableLiquidityLog.availableLiquidity).div(availableLiquidityRollingWindow.count);
+    } else {
+      newAvailableLiquidityLogs.push(oldAvailableLiquidityLog.id);
     }
   }
-
+  availableLiquidityRollingWindow.logs = newAvailableLiquidityLogs;
   availableLiquidityRollingWindow.save();
-  availableLiquidityLogEntry.availableLiquidityRollingWindow = availableLiquidityRollingWindow.id;
   availableLiquidityLogEntry.save();
 }
 
@@ -189,26 +189,26 @@ export function handleDeposit(event: Deposit): void {
   depositVolumeCumulativePerChainAndToken.save();
 
 
-  let slidingWindow = RollingDepositVolumeForLast24Hour.load("0");
+  let slidingDepositWindow = RollingDepositVolumeForLast24Hour.load("0");
 
-  if (!slidingWindow) {
-    slidingWindow = new RollingDepositVolumeForLast24Hour("0");
-    slidingWindow.cumulativeRewardAmount = BigInt.fromI32(0);
-    slidingWindow.cumulativeAmount = BigInt.fromI32(0);
-    slidingWindow.count = BigInt.fromI32(0);
-    slidingWindow.deposits = new Array<string>();
+  if (!slidingDepositWindow) {
+    slidingDepositWindow = new RollingDepositVolumeForLast24Hour("0");
+    slidingDepositWindow.cumulativeRewardAmount = BigInt.fromI32(0);
+    slidingDepositWindow.cumulativeAmount = BigInt.fromI32(0);
+    slidingDepositWindow.count = BigInt.fromI32(0);
+    slidingDepositWindow.deposits = new Array<string>();
   }
 
   // add the current feeDetailLogEntry to the sliding window
   // deposit.rollingWindow = slidingWindow.id;
-  let oldDepositLogs = slidingWindow.deposits;
+  let oldDepositLogs = slidingDepositWindow.deposits;
   let newDepositLogs = new Array<string>();
   newDepositLogs.push(deposit.id);
 
   // add the current feeDetailLogEntry to the cumulative values
-  slidingWindow.cumulativeRewardAmount += deposit.rewardAmount;
-  slidingWindow.cumulativeAmount += deposit.amount;
-  slidingWindow.count += BigInt.fromI32(1);
+  slidingDepositWindow.cumulativeRewardAmount += deposit.rewardAmount;
+  slidingDepositWindow.cumulativeAmount += deposit.amount;
+  slidingDepositWindow.count += BigInt.fromI32(1);
 
   let slidingWindowPerChainAndToken = RollingDepositVolumeForLast24HourPerChainAndToken.load(`${deposit.toChainID.toString()}-${deposit.tokenAddress.toHexString()}`);
 
@@ -219,14 +219,13 @@ export function handleDeposit(event: Deposit): void {
     slidingWindowPerChainAndToken.cumulativeRewardAmount = BigInt.fromI32(0);
     slidingWindowPerChainAndToken.cumulativeAmount = BigInt.fromI32(0);
     slidingWindowPerChainAndToken.count = BigInt.fromI32(0);
+    slidingWindowPerChainAndToken.deposits = new Array<string>();
   }
 
   slidingWindowPerChainAndToken.cumulativeRewardAmount += deposit.rewardAmount;;
   slidingWindowPerChainAndToken.cumulativeAmount += deposit.amount;
   slidingWindowPerChainAndToken.count += BigInt.fromI32(1);
   slidingWindowPerChainAndToken.save();
-
-  deposit.rollingWindowPerChainAndToken = slidingWindowPerChainAndToken.id;
 
   // sliding window calculation
   for (let i = 0; i < oldDepositLogs.length; i++) {
@@ -236,35 +235,35 @@ export function handleDeposit(event: Deposit): void {
     log.info("Loaded old deposits", []);
     if (!oldDeposit) continue;
     if (deposit.timestamp.minus(oldDeposit.timestamp) > BigInt.fromI32(86400)) {
-      slidingWindow.cumulativeRewardAmount = slidingWindow.cumulativeRewardAmount.minus(oldDeposit.rewardAmount);
-      slidingWindow.cumulativeAmount = slidingWindow.cumulativeAmount.minus(oldDeposit.amount);
-      slidingWindow.count -= BigInt.fromI32(1);
+      slidingDepositWindow.cumulativeRewardAmount = slidingDepositWindow.cumulativeRewardAmount.minus(oldDeposit.rewardAmount);
+      slidingDepositWindow.cumulativeAmount = slidingDepositWindow.cumulativeAmount.minus(oldDeposit.amount);
+      slidingDepositWindow.count -= BigInt.fromI32(1);
     } else {
       newDepositLogs.push(oldDeposit.id);
     }
     log.info("Exiting for loop", []);
   }
-  slidingWindow.deposits= newDepositLogs;
-  slidingWindow.save();
+  slidingDepositWindow.deposits = newDepositLogs;
+  slidingDepositWindow.save();
 
   let newDepositPerChainAndTokenLogs = new Array<string>();
   newDepositPerChainAndTokenLogs.push(deposit.id);
-  
+
   let oldDepositsPerChainAndTokenLogs = slidingWindowPerChainAndToken.deposits;
-  
-    for (let i = 0; i < oldDepositsPerChainAndTokenLogs.length; i++) {
-      let oldDepositPerChainAndToken = DepositEntity.load(oldDepositsPerChainAndTokenLogs[i]);
-      if (!oldDepositPerChainAndToken) continue;
-      if (deposit.timestamp.minus(oldDepositPerChainAndToken.timestamp) > BigInt.fromI32(86400)) {
-        slidingWindowPerChainAndToken.cumulativeRewardAmount = slidingWindowPerChainAndToken.cumulativeRewardAmount.minus(oldDepositPerChainAndToken.rewardAmount);
-        slidingWindowPerChainAndToken.cumulativeAmount = slidingWindowPerChainAndToken.cumulativeAmount.minus(oldDepositPerChainAndToken.amount);
-        slidingWindowPerChainAndToken.count -= BigInt.fromI32(1);
-      }
-      else{
-        newDepositPerChainAndTokenLogs.push(oldDepositPerChainAndToken.id);
-      }
+
+  for (let i = 0; i < oldDepositsPerChainAndTokenLogs.length; i++) {
+    let oldDepositPerChainAndToken = DepositEntity.load(oldDepositsPerChainAndTokenLogs[i]);
+    if (!oldDepositPerChainAndToken) continue;
+    if (deposit.timestamp.minus(oldDepositPerChainAndToken.timestamp) > BigInt.fromI32(86400)) {
+      slidingWindowPerChainAndToken.cumulativeRewardAmount = slidingWindowPerChainAndToken.cumulativeRewardAmount.minus(oldDepositPerChainAndToken.rewardAmount);
+      slidingWindowPerChainAndToken.cumulativeAmount = slidingWindowPerChainAndToken.cumulativeAmount.minus(oldDepositPerChainAndToken.amount);
+      slidingWindowPerChainAndToken.count -= BigInt.fromI32(1);
     }
-    slidingWindowPerChainAndToken.deposits=newDepositPerChainAndTokenLogs;
+    else {
+      newDepositPerChainAndTokenLogs.push(oldDepositPerChainAndToken.id);
+    }
+  }
+  slidingWindowPerChainAndToken.deposits = newDepositPerChainAndTokenLogs;
 
   slidingWindowPerChainAndToken.save();
 
@@ -303,9 +302,6 @@ export function handleDeposit(event: Deposit): void {
   todayDepositVolume.cumulativeAmount += deposit.amount;
   todayDepositVolume.count += BigInt.fromI32(1);
 
-
-  deposit.dailyWindow = todayDepositVolume.id;
-  deposit.dailyWindowPerChainAndToken = todayDepositVolumePerChainAndToken.id;
   deposit.save();
   todayDepositVolume.save();
   todayDepositVolumePerChainAndToken.save();
@@ -514,30 +510,31 @@ export function updateIncentivePoolBalance(txId: string, tokenAddress: Address, 
     incentivePoolBalanceRollingWindow.tokenAddress = tokenAddress;
     incentivePoolBalanceRollingWindow.poolBalance = BigInt.fromI32(0);
     incentivePoolBalanceRollingWindow.count = BigInt.fromI32(0);
+    incentivePoolBalanceRollingWindow.logs = new Array<string>();
   }
 
   incentivePoolBalanceRollingWindow.count = incentivePoolBalanceRollingWindow.count.plus(BigInt.fromI32(1));
   incentivePoolBalanceRollingWindow.poolBalance = (incentivePoolBalanceRollingWindow.poolBalance.times(incentivePoolBalanceRollingWindow.count)).plus(currentIncentivePoolBalance).div(incentivePoolBalanceRollingWindow.count);
 
   let oldIncentivePoolBalanceLogs = incentivePoolBalanceRollingWindow.logs;
-  if (oldIncentivePoolBalanceLogs !== null) {
-    // sliding window calculation
-    for (let i = 0; i < oldIncentivePoolBalanceLogs.length; i++) {
-      // for every feeDetailLogEntry in the rolling window, check if they are old enough to remove
-      // if so, then remove and also decrease their values from cumulative rolling window values
-      let oldIncentivePoolBalanceLog = IncentivePoolBalanceLogEntry.load(oldIncentivePoolBalanceLogs[i]);
-      if (!oldIncentivePoolBalanceLog) continue;
-      if (timestamp.minus(oldIncentivePoolBalanceLog.timestamp) > BigInt.fromI32(3600)) {
-        oldIncentivePoolBalanceLog.incentivePoolBalanceRollingWindow = null;
-        oldIncentivePoolBalanceLog.save();
+  let newIncentivePoolBalanceLogs = new Array<string>();
 
-        incentivePoolBalanceRollingWindow.count = incentivePoolBalanceRollingWindow.count.minus(BigInt.fromI32(1));
-        incentivePoolBalanceRollingWindow.poolBalance = (incentivePoolBalanceRollingWindow.poolBalance.times(incentivePoolBalanceRollingWindow.count)).minus(oldIncentivePoolBalanceLog.poolBalance).div(incentivePoolBalanceRollingWindow.count);
-      }
+  newIncentivePoolBalanceLogs.push(incentivePoolBalanceLogEntry.id);
+
+  // sliding window calculation
+  for (let i = 0; i < oldIncentivePoolBalanceLogs.length; i++) {
+    // for every feeDetailLogEntry in the rolling window, check if they are old enough to remove
+    // if so, then remove and also decrease their values from cumulative rolling window values
+    let oldIncentivePoolBalanceLog = IncentivePoolBalanceLogEntry.load(oldIncentivePoolBalanceLogs[i]);
+    if (!oldIncentivePoolBalanceLog) continue;
+    if (timestamp.minus(oldIncentivePoolBalanceLog.timestamp) > BigInt.fromI32(3600)) {
+      incentivePoolBalanceRollingWindow.count = incentivePoolBalanceRollingWindow.count.minus(BigInt.fromI32(1));
+      incentivePoolBalanceRollingWindow.poolBalance = (incentivePoolBalanceRollingWindow.poolBalance.times(incentivePoolBalanceRollingWindow.count)).minus(oldIncentivePoolBalanceLog.poolBalance).div(incentivePoolBalanceRollingWindow.count);
+    } else {
+      newIncentivePoolBalanceLogs.push(oldIncentivePoolBalanceLog.id);
     }
   }
-
+  incentivePoolBalanceRollingWindow.logs = newIncentivePoolBalanceLogs;
   incentivePoolBalanceRollingWindow.save();
-  incentivePoolBalanceLogEntry.incentivePoolBalanceRollingWindow = incentivePoolBalanceRollingWindow.id;
   incentivePoolBalanceLogEntry.save();
 }
