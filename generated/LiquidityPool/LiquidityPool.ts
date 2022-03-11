@@ -46,6 +46,18 @@ export class AssetSent__Params {
   get fromChainId(): BigInt {
     return this._event.parameters[5].value.toBigInt();
   }
+
+  get lpFee(): BigInt {
+    return this._event.parameters[6].value.toBigInt();
+  }
+
+  get transferFee(): BigInt {
+    return this._event.parameters[7].value.toBigInt();
+  }
+
+  get gasFee(): BigInt {
+    return this._event.parameters[8].value.toBigInt();
+  }
 }
 
 export class Deposit extends ethereum.Event {
@@ -109,36 +121,6 @@ export class EthReceived__Params {
 
   get param1(): BigInt {
     return this._event.parameters[1].value.toBigInt();
-  }
-}
-
-export class FeeDetails extends ethereum.Event {
-  get params(): FeeDetails__Params {
-    return new FeeDetails__Params(this);
-  }
-}
-
-export class FeeDetails__Params {
-  _event: FeeDetails;
-
-  constructor(event: FeeDetails) {
-    this._event = event;
-  }
-
-  get lpFee(): BigInt {
-    return this._event.parameters[0].value.toBigInt();
-  }
-
-  get transferFee(): BigInt {
-    return this._event.parameters[1].value.toBigInt();
-  }
-
-  get gasFee(): BigInt {
-    return this._event.parameters[2].value.toBigInt();
-  }
-
-  get transferredToken(): Address {
-    return this._event.parameters[3].value.toAddress();
   }
 }
 
@@ -267,6 +249,24 @@ export class Received__Params {
 
   get amount(): BigInt {
     return this._event.parameters[1].value.toBigInt();
+  }
+}
+
+export class TokenManagerChanged extends ethereum.Event {
+  get params(): TokenManagerChanged__Params {
+    return new TokenManagerChanged__Params(this);
+  }
+}
+
+export class TokenManagerChanged__Params {
+  _event: TokenManagerChanged;
+
+  constructor(event: TokenManagerChanged) {
+    this._event = event;
+  }
+
+  get tokenManagerAddress(): Address {
+    return this._event.parameters[0].value.toAddress();
   }
 }
 
@@ -1238,6 +1238,36 @@ export class SetLiquidityProvidersCall__Outputs {
   _call: SetLiquidityProvidersCall;
 
   constructor(call: SetLiquidityProvidersCall) {
+    this._call = call;
+  }
+}
+
+export class SetTokenManagerCall extends ethereum.Call {
+  get inputs(): SetTokenManagerCall__Inputs {
+    return new SetTokenManagerCall__Inputs(this);
+  }
+
+  get outputs(): SetTokenManagerCall__Outputs {
+    return new SetTokenManagerCall__Outputs(this);
+  }
+}
+
+export class SetTokenManagerCall__Inputs {
+  _call: SetTokenManagerCall;
+
+  constructor(call: SetTokenManagerCall) {
+    this._call = call;
+  }
+
+  get _tokenManager(): Address {
+    return this._call.inputValues[0].value.toAddress();
+  }
+}
+
+export class SetTokenManagerCall__Outputs {
+  _call: SetTokenManagerCall;
+
+  constructor(call: SetTokenManagerCall) {
     this._call = call;
   }
 }

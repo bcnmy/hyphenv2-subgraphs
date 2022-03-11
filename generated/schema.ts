@@ -11,371 +11,6 @@ import {
   BigDecimal
 } from "@graphprotocol/graph-ts";
 
-export class FeeDetailLogEntry extends Entity {
-  constructor(id: string) {
-    super();
-    this.set("id", Value.fromString(id));
-
-    this.set("lpFee", Value.fromBigInt(BigInt.zero()));
-    this.set("transferFee", Value.fromBigInt(BigInt.zero()));
-    this.set("gasFee", Value.fromBigInt(BigInt.zero()));
-    this.set("timestamp", Value.fromBigInt(BigInt.zero()));
-    this.set("tokenAddress", Value.fromBytes(Bytes.empty()));
-  }
-
-  save(): void {
-    let id = this.get("id");
-    assert(id != null, "Cannot save FeeDetailLogEntry entity without an ID");
-    if (id) {
-      assert(
-        id.kind == ValueKind.STRING,
-        "Cannot save FeeDetailLogEntry entity with non-string ID. " +
-          'Considering using .toHex() to convert the "id" to a string.'
-      );
-      store.set("FeeDetailLogEntry", id.toString(), this);
-    }
-  }
-
-  static load(id: string): FeeDetailLogEntry | null {
-    return changetype<FeeDetailLogEntry | null>(
-      store.get("FeeDetailLogEntry", id)
-    );
-  }
-
-  get id(): string {
-    let value = this.get("id");
-    return value!.toString();
-  }
-
-  set id(value: string) {
-    this.set("id", Value.fromString(value));
-  }
-
-  get lpFee(): BigInt {
-    let value = this.get("lpFee");
-    return value!.toBigInt();
-  }
-
-  set lpFee(value: BigInt) {
-    this.set("lpFee", Value.fromBigInt(value));
-  }
-
-  get transferFee(): BigInt {
-    let value = this.get("transferFee");
-    return value!.toBigInt();
-  }
-
-  set transferFee(value: BigInt) {
-    this.set("transferFee", Value.fromBigInt(value));
-  }
-
-  get gasFee(): BigInt {
-    let value = this.get("gasFee");
-    return value!.toBigInt();
-  }
-
-  set gasFee(value: BigInt) {
-    this.set("gasFee", Value.fromBigInt(value));
-  }
-
-  get timestamp(): BigInt {
-    let value = this.get("timestamp");
-    return value!.toBigInt();
-  }
-
-  set timestamp(value: BigInt) {
-    this.set("timestamp", Value.fromBigInt(value));
-  }
-
-  get tokenAddress(): Bytes {
-    let value = this.get("tokenAddress");
-    return value!.toBytes();
-  }
-
-  set tokenAddress(value: Bytes) {
-    this.set("tokenAddress", Value.fromBytes(value));
-  }
-}
-
-export class FeeCumulative extends Entity {
-  constructor(id: string) {
-    super();
-    this.set("id", Value.fromString(id));
-
-    this.set("lpFee", Value.fromBigInt(BigInt.zero()));
-    this.set("transferFee", Value.fromBigInt(BigInt.zero()));
-    this.set("gasFee", Value.fromBigInt(BigInt.zero()));
-    this.set("count", Value.fromBigInt(BigInt.zero()));
-    this.set("tokenAddress", Value.fromBytes(Bytes.empty()));
-  }
-
-  save(): void {
-    let id = this.get("id");
-    assert(id != null, "Cannot save FeeCumulative entity without an ID");
-    if (id) {
-      assert(
-        id.kind == ValueKind.STRING,
-        "Cannot save FeeCumulative entity with non-string ID. " +
-          'Considering using .toHex() to convert the "id" to a string.'
-      );
-      store.set("FeeCumulative", id.toString(), this);
-    }
-  }
-
-  static load(id: string): FeeCumulative | null {
-    return changetype<FeeCumulative | null>(store.get("FeeCumulative", id));
-  }
-
-  get id(): string {
-    let value = this.get("id");
-    return value!.toString();
-  }
-
-  set id(value: string) {
-    this.set("id", Value.fromString(value));
-  }
-
-  get lpFee(): BigInt {
-    let value = this.get("lpFee");
-    return value!.toBigInt();
-  }
-
-  set lpFee(value: BigInt) {
-    this.set("lpFee", Value.fromBigInt(value));
-  }
-
-  get transferFee(): BigInt {
-    let value = this.get("transferFee");
-    return value!.toBigInt();
-  }
-
-  set transferFee(value: BigInt) {
-    this.set("transferFee", Value.fromBigInt(value));
-  }
-
-  get gasFee(): BigInt {
-    let value = this.get("gasFee");
-    return value!.toBigInt();
-  }
-
-  set gasFee(value: BigInt) {
-    this.set("gasFee", Value.fromBigInt(value));
-  }
-
-  get count(): BigInt {
-    let value = this.get("count");
-    return value!.toBigInt();
-  }
-
-  set count(value: BigInt) {
-    this.set("count", Value.fromBigInt(value));
-  }
-
-  get tokenAddress(): Bytes {
-    let value = this.get("tokenAddress");
-    return value!.toBytes();
-  }
-
-  set tokenAddress(value: Bytes) {
-    this.set("tokenAddress", Value.fromBytes(value));
-  }
-}
-
-export class RollingFeeDetailsLogsForLast24Hour extends Entity {
-  constructor(id: string) {
-    super();
-    this.set("id", Value.fromString(id));
-
-    this.set("cumulativeLpFee", Value.fromBigInt(BigInt.zero()));
-    this.set("cumulativeTransferFee", Value.fromBigInt(BigInt.zero()));
-    this.set("cumulativeGasFee", Value.fromBigInt(BigInt.zero()));
-    this.set("logs", Value.fromStringArray(new Array(0)));
-    this.set("count", Value.fromBigInt(BigInt.zero()));
-    this.set("tokenAddress", Value.fromBytes(Bytes.empty()));
-  }
-
-  save(): void {
-    let id = this.get("id");
-    assert(
-      id != null,
-      "Cannot save RollingFeeDetailsLogsForLast24Hour entity without an ID"
-    );
-    if (id) {
-      assert(
-        id.kind == ValueKind.STRING,
-        "Cannot save RollingFeeDetailsLogsForLast24Hour entity with non-string ID. " +
-          'Considering using .toHex() to convert the "id" to a string.'
-      );
-      store.set("RollingFeeDetailsLogsForLast24Hour", id.toString(), this);
-    }
-  }
-
-  static load(id: string): RollingFeeDetailsLogsForLast24Hour | null {
-    return changetype<RollingFeeDetailsLogsForLast24Hour | null>(
-      store.get("RollingFeeDetailsLogsForLast24Hour", id)
-    );
-  }
-
-  get id(): string {
-    let value = this.get("id");
-    return value!.toString();
-  }
-
-  set id(value: string) {
-    this.set("id", Value.fromString(value));
-  }
-
-  get cumulativeLpFee(): BigInt {
-    let value = this.get("cumulativeLpFee");
-    return value!.toBigInt();
-  }
-
-  set cumulativeLpFee(value: BigInt) {
-    this.set("cumulativeLpFee", Value.fromBigInt(value));
-  }
-
-  get cumulativeTransferFee(): BigInt {
-    let value = this.get("cumulativeTransferFee");
-    return value!.toBigInt();
-  }
-
-  set cumulativeTransferFee(value: BigInt) {
-    this.set("cumulativeTransferFee", Value.fromBigInt(value));
-  }
-
-  get cumulativeGasFee(): BigInt {
-    let value = this.get("cumulativeGasFee");
-    return value!.toBigInt();
-  }
-
-  set cumulativeGasFee(value: BigInt) {
-    this.set("cumulativeGasFee", Value.fromBigInt(value));
-  }
-
-  get logs(): Array<string> {
-    let value = this.get("logs");
-    return value!.toStringArray();
-  }
-
-  set logs(value: Array<string>) {
-    this.set("logs", Value.fromStringArray(value));
-  }
-
-  get count(): BigInt {
-    let value = this.get("count");
-    return value!.toBigInt();
-  }
-
-  set count(value: BigInt) {
-    this.set("count", Value.fromBigInt(value));
-  }
-
-  get tokenAddress(): Bytes {
-    let value = this.get("tokenAddress");
-    return value!.toBytes();
-  }
-
-  set tokenAddress(value: Bytes) {
-    this.set("tokenAddress", Value.fromBytes(value));
-  }
-}
-
-export class DailyFeeDetailsLog extends Entity {
-  constructor(id: string) {
-    super();
-    this.set("id", Value.fromString(id));
-
-    this.set("cumulativeLpFee", Value.fromBigInt(BigInt.zero()));
-    this.set("cumulativeTransferFee", Value.fromBigInt(BigInt.zero()));
-    this.set("cumulativeGasFee", Value.fromBigInt(BigInt.zero()));
-    this.set("count", Value.fromBigInt(BigInt.zero()));
-    this.set("timestamp", Value.fromBigInt(BigInt.zero()));
-    this.set("tokenAddress", Value.fromBytes(Bytes.empty()));
-  }
-
-  save(): void {
-    let id = this.get("id");
-    assert(id != null, "Cannot save DailyFeeDetailsLog entity without an ID");
-    if (id) {
-      assert(
-        id.kind == ValueKind.STRING,
-        "Cannot save DailyFeeDetailsLog entity with non-string ID. " +
-          'Considering using .toHex() to convert the "id" to a string.'
-      );
-      store.set("DailyFeeDetailsLog", id.toString(), this);
-    }
-  }
-
-  static load(id: string): DailyFeeDetailsLog | null {
-    return changetype<DailyFeeDetailsLog | null>(
-      store.get("DailyFeeDetailsLog", id)
-    );
-  }
-
-  get id(): string {
-    let value = this.get("id");
-    return value!.toString();
-  }
-
-  set id(value: string) {
-    this.set("id", Value.fromString(value));
-  }
-
-  get cumulativeLpFee(): BigInt {
-    let value = this.get("cumulativeLpFee");
-    return value!.toBigInt();
-  }
-
-  set cumulativeLpFee(value: BigInt) {
-    this.set("cumulativeLpFee", Value.fromBigInt(value));
-  }
-
-  get cumulativeTransferFee(): BigInt {
-    let value = this.get("cumulativeTransferFee");
-    return value!.toBigInt();
-  }
-
-  set cumulativeTransferFee(value: BigInt) {
-    this.set("cumulativeTransferFee", Value.fromBigInt(value));
-  }
-
-  get cumulativeGasFee(): BigInt {
-    let value = this.get("cumulativeGasFee");
-    return value!.toBigInt();
-  }
-
-  set cumulativeGasFee(value: BigInt) {
-    this.set("cumulativeGasFee", Value.fromBigInt(value));
-  }
-
-  get count(): BigInt {
-    let value = this.get("count");
-    return value!.toBigInt();
-  }
-
-  set count(value: BigInt) {
-    this.set("count", Value.fromBigInt(value));
-  }
-
-  get timestamp(): BigInt {
-    let value = this.get("timestamp");
-    return value!.toBigInt();
-  }
-
-  set timestamp(value: BigInt) {
-    this.set("timestamp", Value.fromBigInt(value));
-  }
-
-  get tokenAddress(): Bytes {
-    let value = this.get("tokenAddress");
-    return value!.toBytes();
-  }
-
-  set tokenAddress(value: Bytes) {
-    this.set("tokenAddress", Value.fromBytes(value));
-  }
-}
-
 export class Deposit extends Entity {
   constructor(id: string) {
     super();
@@ -1368,6 +1003,9 @@ export class AssetSentToUserLogEntry extends Entity {
     this.set("receiver", Value.fromBytes(Bytes.empty()));
     this.set("depositHash", Value.fromBytes(Bytes.empty()));
     this.set("fromChainId", Value.fromBigInt(BigInt.zero()));
+    this.set("lpFee", Value.fromBigInt(BigInt.zero()));
+    this.set("transferFee", Value.fromBigInt(BigInt.zero()));
+    this.set("gasFee", Value.fromBigInt(BigInt.zero()));
   }
 
   save(): void {
@@ -1462,6 +1100,307 @@ export class AssetSentToUserLogEntry extends Entity {
 
   set fromChainId(value: BigInt) {
     this.set("fromChainId", Value.fromBigInt(value));
+  }
+
+  get lpFee(): BigInt {
+    let value = this.get("lpFee");
+    return value!.toBigInt();
+  }
+
+  set lpFee(value: BigInt) {
+    this.set("lpFee", Value.fromBigInt(value));
+  }
+
+  get transferFee(): BigInt {
+    let value = this.get("transferFee");
+    return value!.toBigInt();
+  }
+
+  set transferFee(value: BigInt) {
+    this.set("transferFee", Value.fromBigInt(value));
+  }
+
+  get gasFee(): BigInt {
+    let value = this.get("gasFee");
+    return value!.toBigInt();
+  }
+
+  set gasFee(value: BigInt) {
+    this.set("gasFee", Value.fromBigInt(value));
+  }
+}
+
+export class DailyAssetSentPerFromChainAndToken extends Entity {
+  constructor(id: string) {
+    super();
+    this.set("id", Value.fromString(id));
+
+    this.set("timestamp", Value.fromBigInt(BigInt.zero()));
+    this.set("tokenAddress", Value.fromBytes(Bytes.empty()));
+    this.set("cumulativeAmount", Value.fromBigInt(BigInt.zero()));
+    this.set("cumulativeTransferredAmount", Value.fromBigInt(BigInt.zero()));
+    this.set("fromChainId", Value.fromBigInt(BigInt.zero()));
+    this.set("cumulativeLpFee", Value.fromBigInt(BigInt.zero()));
+    this.set("cumulativeTransferFee", Value.fromBigInt(BigInt.zero()));
+    this.set("cumulativeGasFee", Value.fromBigInt(BigInt.zero()));
+    this.set("count", Value.fromBigInt(BigInt.zero()));
+  }
+
+  save(): void {
+    let id = this.get("id");
+    assert(
+      id != null,
+      "Cannot save DailyAssetSentPerFromChainAndToken entity without an ID"
+    );
+    if (id) {
+      assert(
+        id.kind == ValueKind.STRING,
+        "Cannot save DailyAssetSentPerFromChainAndToken entity with non-string ID. " +
+          'Considering using .toHex() to convert the "id" to a string.'
+      );
+      store.set("DailyAssetSentPerFromChainAndToken", id.toString(), this);
+    }
+  }
+
+  static load(id: string): DailyAssetSentPerFromChainAndToken | null {
+    return changetype<DailyAssetSentPerFromChainAndToken | null>(
+      store.get("DailyAssetSentPerFromChainAndToken", id)
+    );
+  }
+
+  get id(): string {
+    let value = this.get("id");
+    return value!.toString();
+  }
+
+  set id(value: string) {
+    this.set("id", Value.fromString(value));
+  }
+
+  get timestamp(): BigInt {
+    let value = this.get("timestamp");
+    return value!.toBigInt();
+  }
+
+  set timestamp(value: BigInt) {
+    this.set("timestamp", Value.fromBigInt(value));
+  }
+
+  get tokenAddress(): Bytes {
+    let value = this.get("tokenAddress");
+    return value!.toBytes();
+  }
+
+  set tokenAddress(value: Bytes) {
+    this.set("tokenAddress", Value.fromBytes(value));
+  }
+
+  get cumulativeAmount(): BigInt {
+    let value = this.get("cumulativeAmount");
+    return value!.toBigInt();
+  }
+
+  set cumulativeAmount(value: BigInt) {
+    this.set("cumulativeAmount", Value.fromBigInt(value));
+  }
+
+  get cumulativeTransferredAmount(): BigInt {
+    let value = this.get("cumulativeTransferredAmount");
+    return value!.toBigInt();
+  }
+
+  set cumulativeTransferredAmount(value: BigInt) {
+    this.set("cumulativeTransferredAmount", Value.fromBigInt(value));
+  }
+
+  get fromChainId(): BigInt {
+    let value = this.get("fromChainId");
+    return value!.toBigInt();
+  }
+
+  set fromChainId(value: BigInt) {
+    this.set("fromChainId", Value.fromBigInt(value));
+  }
+
+  get cumulativeLpFee(): BigInt {
+    let value = this.get("cumulativeLpFee");
+    return value!.toBigInt();
+  }
+
+  set cumulativeLpFee(value: BigInt) {
+    this.set("cumulativeLpFee", Value.fromBigInt(value));
+  }
+
+  get cumulativeTransferFee(): BigInt {
+    let value = this.get("cumulativeTransferFee");
+    return value!.toBigInt();
+  }
+
+  set cumulativeTransferFee(value: BigInt) {
+    this.set("cumulativeTransferFee", Value.fromBigInt(value));
+  }
+
+  get cumulativeGasFee(): BigInt {
+    let value = this.get("cumulativeGasFee");
+    return value!.toBigInt();
+  }
+
+  set cumulativeGasFee(value: BigInt) {
+    this.set("cumulativeGasFee", Value.fromBigInt(value));
+  }
+
+  get count(): BigInt {
+    let value = this.get("count");
+    return value!.toBigInt();
+  }
+
+  set count(value: BigInt) {
+    this.set("count", Value.fromBigInt(value));
+  }
+}
+
+export class RollingAssetSentForLast24HoursPerChainAndToken extends Entity {
+  constructor(id: string) {
+    super();
+    this.set("id", Value.fromString(id));
+
+    this.set("count", Value.fromBigInt(BigInt.zero()));
+    this.set("tokenAddress", Value.fromBytes(Bytes.empty()));
+    this.set("cumulativeAmount", Value.fromBigInt(BigInt.zero()));
+    this.set("cumulativeTransferredAmount", Value.fromBigInt(BigInt.zero()));
+    this.set("depositHash", Value.fromBytes(Bytes.empty()));
+    this.set("fromChainId", Value.fromBigInt(BigInt.zero()));
+    this.set("cumulativeLpFee", Value.fromBigInt(BigInt.zero()));
+    this.set("cumulativeTransferFee", Value.fromBigInt(BigInt.zero()));
+    this.set("cumulativeGasFee", Value.fromBigInt(BigInt.zero()));
+    this.set("assetSentLogs", Value.fromStringArray(new Array(0)));
+  }
+
+  save(): void {
+    let id = this.get("id");
+    assert(
+      id != null,
+      "Cannot save RollingAssetSentForLast24HoursPerChainAndToken entity without an ID"
+    );
+    if (id) {
+      assert(
+        id.kind == ValueKind.STRING,
+        "Cannot save RollingAssetSentForLast24HoursPerChainAndToken entity with non-string ID. " +
+          'Considering using .toHex() to convert the "id" to a string.'
+      );
+      store.set(
+        "RollingAssetSentForLast24HoursPerChainAndToken",
+        id.toString(),
+        this
+      );
+    }
+  }
+
+  static load(
+    id: string
+  ): RollingAssetSentForLast24HoursPerChainAndToken | null {
+    return changetype<RollingAssetSentForLast24HoursPerChainAndToken | null>(
+      store.get("RollingAssetSentForLast24HoursPerChainAndToken", id)
+    );
+  }
+
+  get id(): string {
+    let value = this.get("id");
+    return value!.toString();
+  }
+
+  set id(value: string) {
+    this.set("id", Value.fromString(value));
+  }
+
+  get count(): BigInt {
+    let value = this.get("count");
+    return value!.toBigInt();
+  }
+
+  set count(value: BigInt) {
+    this.set("count", Value.fromBigInt(value));
+  }
+
+  get tokenAddress(): Bytes {
+    let value = this.get("tokenAddress");
+    return value!.toBytes();
+  }
+
+  set tokenAddress(value: Bytes) {
+    this.set("tokenAddress", Value.fromBytes(value));
+  }
+
+  get cumulativeAmount(): BigInt {
+    let value = this.get("cumulativeAmount");
+    return value!.toBigInt();
+  }
+
+  set cumulativeAmount(value: BigInt) {
+    this.set("cumulativeAmount", Value.fromBigInt(value));
+  }
+
+  get cumulativeTransferredAmount(): BigInt {
+    let value = this.get("cumulativeTransferredAmount");
+    return value!.toBigInt();
+  }
+
+  set cumulativeTransferredAmount(value: BigInt) {
+    this.set("cumulativeTransferredAmount", Value.fromBigInt(value));
+  }
+
+  get depositHash(): Bytes {
+    let value = this.get("depositHash");
+    return value!.toBytes();
+  }
+
+  set depositHash(value: Bytes) {
+    this.set("depositHash", Value.fromBytes(value));
+  }
+
+  get fromChainId(): BigInt {
+    let value = this.get("fromChainId");
+    return value!.toBigInt();
+  }
+
+  set fromChainId(value: BigInt) {
+    this.set("fromChainId", Value.fromBigInt(value));
+  }
+
+  get cumulativeLpFee(): BigInt {
+    let value = this.get("cumulativeLpFee");
+    return value!.toBigInt();
+  }
+
+  set cumulativeLpFee(value: BigInt) {
+    this.set("cumulativeLpFee", Value.fromBigInt(value));
+  }
+
+  get cumulativeTransferFee(): BigInt {
+    let value = this.get("cumulativeTransferFee");
+    return value!.toBigInt();
+  }
+
+  set cumulativeTransferFee(value: BigInt) {
+    this.set("cumulativeTransferFee", Value.fromBigInt(value));
+  }
+
+  get cumulativeGasFee(): BigInt {
+    let value = this.get("cumulativeGasFee");
+    return value!.toBigInt();
+  }
+
+  set cumulativeGasFee(value: BigInt) {
+    this.set("cumulativeGasFee", Value.fromBigInt(value));
+  }
+
+  get assetSentLogs(): Array<string> {
+    let value = this.get("assetSentLogs");
+    return value!.toStringArray();
+  }
+
+  set assetSentLogs(value: Array<string>) {
+    this.set("assetSentLogs", Value.fromStringArray(value));
   }
 }
 

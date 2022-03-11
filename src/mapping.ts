@@ -4,7 +4,6 @@ import {
   AssetSent,
   Deposit,
   EthReceived,
-  FeeDetails,
   GasFeeWithdraw,
   LiquidityProvidersChanged,
   OwnershipTransferred,
@@ -33,10 +32,6 @@ import {
   DepositVolumeCumulative,
   RollingDepositVolumeForLast24Hour,
   RollingDepositVolumeForLast24HourPerChainAndToken,
-  FeeDetailLogEntry,
-  FeeCumulative,
-  DailyFeeDetailsLog,
-  RollingFeeDetailsLogsForLast24Hour,
   UniqueWallet,
   UniqueWalletCount,
   DepositVolumeCumulativePerChainAndToken,
@@ -50,7 +45,9 @@ import {
   RollingSuppliedLiquidityForLast24Hour,
   IncentivePoolBalanceLogEntry,
   HourlyIncentivePoolBalance,
-  RollingIncentivePoolBalanceForLast24Hour
+  RollingIncentivePoolBalanceForLast24Hour,
+  DailyAssetSentPerFromChainAndToken,
+  RollingAssetSentForLast24HoursPerChainAndToken
 } from "../generated/schema"
 
 export function updateAvailableLiquidity(txId: string, tokenAddress: Address, timestamp: BigInt, eventAddress: Address): void {
@@ -122,8 +119,6 @@ export function updateAvailableLiquidity(txId: string, tokenAddress: Address, ti
 }
 
 export function handleAssetSent(event: AssetSent): void {
-  updateIncentivePoolBalance(event.transaction.hash.toHex(), event.params.asset, event.block.timestamp, event.address);
-
   let assetSent = new AssetSentToUserLogEntry(event.transaction.hash.toHex());
   assetSent.tokenAddress = event.params.asset;
   assetSent.amount = event.params.amount;
@@ -132,8 +127,90 @@ export function handleAssetSent(event: AssetSent): void {
   assetSent.depositHash = event.params.depositHash;
   assetSent.fromChainId = event.params.fromChainId;
   assetSent.timestamp = event.block.timestamp;
+  assetSent.lpFee = event.params.lpFee;
+  assetSent.transferFee = event.params.transferFee;
+  assetSent.gasFee = event.params.gasFee;
 
   assetSent.save();
+
+  const epochModSecondsInADay = assetSent.timestamp.mod(BigInt.fromI32(86400));
+  const dayEpoch = assetSent.timestamp.minus(epochModSecondsInADay);
+
+  let dailyAssetSentPerFromChainAndToken = DailyAssetSentPerFromChainAndToken.load(`${assetSent.fromChainId.toString()}-${assetSent.tokenAddress.toHexString()}-${dayEpoch}`);
+
+  if (!dailyAssetSentPerFromChainAndToken) {
+    dailyAssetSentPerFromChainAndToken = new DailyAssetSentPerFromChainAndToken(`${assetSent.fromChainId.toString()}-${assetSent.tokenAddress.toHexString()}-${dayEpoch}`);
+    dailyAssetSentPerFromChainAndToken.fromChainId = assetSent.fromChainId;
+    dailyAssetSentPerFromChainAndToken.tokenAddress = assetSent.tokenAddress;
+    dailyAssetSentPerFromChainAndToken.cumulativeAmount = BigInt.fromI32(0);
+    dailyAssetSentPerFromChainAndToken.cumulativeTransferredAmount = BigInt.fromI32(0);
+    dailyAssetSentPerFromChainAndToken.count = BigInt.fromI32(0);
+    dailyAssetSentPerFromChainAndToken.cumulativeLpFee = BigInt.fromI32(0);
+    dailyAssetSentPerFromChainAndToken.cumulativeTransferFee = BigInt.fromI32(0);
+    dailyAssetSentPerFromChainAndToken.cumulativeGasFee = BigInt.fromI32(0);
+    dailyAssetSentPerFromChainAndToken.timestamp = dayEpoch;
+  }
+
+  dailyAssetSentPerFromChainAndToken.cumulativeAmount = dailyAssetSentPerFromChainAndToken.cumulativeAmount.plus(assetSent.amount);
+  dailyAssetSentPerFromChainAndToken.cumulativeTransferredAmount = dailyAssetSentPerFromChainAndToken.cumulativeTransferredAmount.plus(assetSent.transferredAmount);
+  dailyAssetSentPerFromChainAndToken.cumulativeLpFee = dailyAssetSentPerFromChainAndToken.cumulativeLpFee.plus(assetSent.lpFee);
+  dailyAssetSentPerFromChainAndToken.cumulativeGasFee = dailyAssetSentPerFromChainAndToken.cumulativeGasFee.plus(assetSent.gasFee);
+  dailyAssetSentPerFromChainAndToken.cumulativeTransferFee = dailyAssetSentPerFromChainAndToken.cumulativeTransferFee.plus(assetSent.transferFee);
+  dailyAssetSentPerFromChainAndToken.count = dailyAssetSentPerFromChainAndToken.count.plus(BigInt.fromI32(1));
+  log.info("daily Asset sent count increased", []);
+
+
+  dailyAssetSentPerFromChainAndToken.save();
+
+  let assetSentRollingWindow = RollingAssetSentForLast24HoursPerChainAndToken.load(`${assetSent.fromChainId.toString()}-${assetSent.tokenAddress.toHexString()}`);
+  if (!assetSentRollingWindow) {
+    assetSentRollingWindow = new RollingAssetSentForLast24HoursPerChainAndToken(`${assetSent.fromChainId.toString()}-${assetSent.tokenAddress.toHexString()}`);
+    assetSentRollingWindow.fromChainId = assetSent.fromChainId;
+    assetSentRollingWindow.tokenAddress = assetSent.tokenAddress;
+    assetSentRollingWindow.cumulativeAmount = BigInt.fromI32(0);
+    assetSentRollingWindow.cumulativeTransferredAmount = BigInt.fromI32(0);
+    assetSentRollingWindow.count = BigInt.fromI32(0);
+    assetSentRollingWindow.cumulativeLpFee = BigInt.fromI32(0);
+    assetSentRollingWindow.cumulativeTransferFee = BigInt.fromI32(0);
+    assetSentRollingWindow.cumulativeGasFee = BigInt.fromI32(0);
+    assetSentRollingWindow.assetSentLogs = new Array<string>();
+  }
+
+  assetSentRollingWindow.cumulativeAmount = dailyAssetSentPerFromChainAndToken.cumulativeAmount.plus(assetSent.amount);
+  assetSentRollingWindow.cumulativeTransferredAmount = dailyAssetSentPerFromChainAndToken.cumulativeTransferredAmount.plus(assetSent.transferredAmount);
+  assetSentRollingWindow.cumulativeLpFee = dailyAssetSentPerFromChainAndToken.cumulativeLpFee.plus(assetSent.lpFee);
+  assetSentRollingWindow.cumulativeGasFee = dailyAssetSentPerFromChainAndToken.cumulativeGasFee.plus(assetSent.gasFee);
+  assetSentRollingWindow.cumulativeTransferFee = dailyAssetSentPerFromChainAndToken.cumulativeTransferFee.plus(assetSent.transferFee);
+  assetSentRollingWindow.count = assetSentRollingWindow.count.plus(BigInt.fromI32(1));
+
+  let oldAssetSentLogs = assetSentRollingWindow.assetSentLogs;
+
+  while (true) {
+    if (oldAssetSentLogs.length > 0) {
+      let oldAssetSentLog = AssetSentToUserLogEntry.load(oldAssetSentLogs[0]);
+      if (!oldAssetSentLog) continue;
+      if (assetSent.timestamp.minus(oldAssetSentLog.timestamp).gt(BigInt.fromI32(86400))) {
+        assetSentRollingWindow.cumulativeAmount = assetSentRollingWindow.cumulativeAmount.minus(oldAssetSentLog.amount);
+        assetSentRollingWindow.cumulativeTransferredAmount = assetSentRollingWindow.cumulativeTransferredAmount.minus(oldAssetSentLog.transferredAmount);
+        assetSentRollingWindow.cumulativeGasFee = assetSentRollingWindow.cumulativeGasFee.minus(oldAssetSentLog.gasFee);
+        assetSentRollingWindow.cumulativeLpFee = assetSentRollingWindow.cumulativeLpFee.minus(oldAssetSentLog.lpFee);
+        assetSentRollingWindow.cumulativeTransferFee = assetSentRollingWindow.cumulativeTransferFee.minus(oldAssetSentLog.transferFee);
+        assetSentRollingWindow.count = assetSentRollingWindow.count.minus(BigInt.fromI32(1));
+        oldAssetSentLogs.shift();
+        log.info("Asset sent count decreased", []);
+      } else {
+        break;
+      }
+    } else {
+      break;
+    }
+  }
+
+  oldAssetSentLogs.push(assetSent.id);
+  assetSentRollingWindow.assetSentLogs = oldAssetSentLogs;
+  assetSentRollingWindow.save();
+
+  updateIncentivePoolBalance(event.transaction.hash.toHex(), event.params.asset, event.block.timestamp, event.address);
   updateAvailableLiquidity(event.transaction.hash.toHex(), event.params.asset, event.block.timestamp, event.address);
 }
 
@@ -171,9 +248,9 @@ export function handleDeposit(event: Deposit): void {
   depositVolumeCumulative.count += BigInt.fromI32(1);
   depositVolumeCumulative.save();
 
-  let depositVolumeCumulativePerChainAndToken = DepositVolumeCumulativePerChainAndToken.load(`${deposit.toChainID.toString()}-${deposit.tokenAddress.toHexString()}`);
+  let depositVolumeCumulativePerChainAndToken = DepositVolumeCumulativePerChainAndToken.load(`${deposit.toChainID.toString()} - ${deposit.tokenAddress.toHexString()}`);
   if (!depositVolumeCumulativePerChainAndToken) {
-    depositVolumeCumulativePerChainAndToken = new DepositVolumeCumulativePerChainAndToken(`${deposit.toChainID.toString()}-${deposit.tokenAddress.toHexString()}`);
+    depositVolumeCumulativePerChainAndToken = new DepositVolumeCumulativePerChainAndToken(`${deposit.toChainID.toString()} - ${deposit.tokenAddress.toHexString()}`);
     depositVolumeCumulativePerChainAndToken.cumulativeAmount = BigInt.fromI32(0);
     depositVolumeCumulativePerChainAndToken.cumulativeRewardAmount = BigInt.fromI32(0);
     depositVolumeCumulativePerChainAndToken.tokenAddress = deposit.tokenAddress;
@@ -210,10 +287,10 @@ export function handleDeposit(event: Deposit): void {
   slidingDepositWindow.cumulativeAmount += deposit.amount;
   slidingDepositWindow.count += BigInt.fromI32(1);
 
-  let slidingWindowPerChainAndToken = RollingDepositVolumeForLast24HourPerChainAndToken.load(`${deposit.toChainID.toString()}-${deposit.tokenAddress.toHexString()}`);
+  let slidingWindowPerChainAndToken = RollingDepositVolumeForLast24HourPerChainAndToken.load(`${deposit.toChainID.toString()} - ${deposit.tokenAddress.toHexString()}`);
 
   if (!slidingWindowPerChainAndToken) {
-    slidingWindowPerChainAndToken = new RollingDepositVolumeForLast24HourPerChainAndToken(`${deposit.toChainID.toString()}-${deposit.tokenAddress.toHexString()}`);
+    slidingWindowPerChainAndToken = new RollingDepositVolumeForLast24HourPerChainAndToken(`${deposit.toChainID.toString()} - ${deposit.tokenAddress.toHexString()}`);
     slidingWindowPerChainAndToken.toChainID = deposit.toChainID;
     slidingWindowPerChainAndToken.tokenAddress = deposit.tokenAddress;
     slidingWindowPerChainAndToken.cumulativeRewardAmount = BigInt.fromI32(0);
@@ -280,9 +357,9 @@ export function handleDeposit(event: Deposit): void {
     todayDepositVolume.timestamp = dayEpoch;
   }
 
-  let todayDepositVolumePerChainAndToken = DailyDepositVolumePerChainAndToken.load(`${dayEpoch.toString()}-${deposit.toChainID.toString()}-${deposit.tokenAddress.toHexString()}`);
+  let todayDepositVolumePerChainAndToken = DailyDepositVolumePerChainAndToken.load(`${dayEpoch.toString()} - ${deposit.toChainID.toString()} - ${deposit.tokenAddress.toHexString()}`);
   if (!todayDepositVolumePerChainAndToken) {
-    todayDepositVolumePerChainAndToken = new DailyDepositVolumePerChainAndToken(`${dayEpoch.toString()}-${deposit.toChainID.toString()}-${deposit.tokenAddress.toHexString()}`);
+    todayDepositVolumePerChainAndToken = new DailyDepositVolumePerChainAndToken(`${dayEpoch.toString()} - ${deposit.toChainID.toString()} - ${deposit.tokenAddress.toHexString()}`);
     todayDepositVolumePerChainAndToken.cumulativeAmount = BigInt.fromI32(0);
     todayDepositVolumePerChainAndToken.cumulativeRewardAmount = BigInt.fromI32(0);
     todayDepositVolumePerChainAndToken.toChainID = deposit.toChainID;
@@ -342,142 +419,12 @@ export function handleDeposit(event: Deposit): void {
 
 // export function handleEthReceived(event: EthReceived): void { }
 
-export function handleFeeDetails(event: FeeDetails): void {
-  log.info("Inside Fee Details:", ["Feels good"]);
-  // FeeDetail is the fundamental entity
-
-  const feeDetailLogEntry = new FeeDetailLogEntry(event.transaction.hash.toHex());
-  feeDetailLogEntry.timestamp = event.block.timestamp;
-  feeDetailLogEntry.transferFee = event.params.transferFee;
-  feeDetailLogEntry.lpFee = event.params.lpFee;
-  feeDetailLogEntry.gasFee = event.params.gasFee;
-  feeDetailLogEntry.tokenAddress = event.params.transferredToken;
-  log.info("Fee Detail log entry populated", ["Feels good"]);
-
-
-  // log.info("tran:", [deposit.sender.toHexString()]);
-  // log.info("Token Address:", [deposit.tokenAddress.toHexString()]);
-  // log.info("Receiver:", [deposit.receiver.toHexString()]);
-  // log.info("toChainid:", [deposit.toChainID.toString()]);
-  // log.info("RewardAmount:", [deposit.rewardAmount.toString()]);
-  // log.info("Amount:", [deposit.amount.toString()]);
-  // log.info("tag:", [deposit.tag.toString()]);
-
-  // FeeCumulative is the cumulative all time data
-  let feeCumulative = FeeCumulative.load(feeDetailLogEntry.tokenAddress.toHex());
-
-  if (!feeCumulative) {
-    feeCumulative = new FeeCumulative(feeDetailLogEntry.tokenAddress.toHex());
-    feeCumulative.lpFee = BigInt.fromI32(0);
-    feeCumulative.gasFee = BigInt.fromI32(0);
-    feeCumulative.transferFee = BigInt.fromI32(0);
-    feeCumulative.count = BigInt.fromI32(0);
-    feeCumulative.tokenAddress = feeDetailLogEntry.tokenAddress;
-  }
-
-  feeCumulative.lpFee = feeCumulative.lpFee.plus(feeDetailLogEntry.lpFee);
-  feeCumulative.gasFee = feeCumulative.gasFee.plus(feeDetailLogEntry.gasFee);
-  feeCumulative.transferFee = feeCumulative.transferFee.plus(feeDetailLogEntry.transferFee);
-  feeCumulative.count += BigInt.fromI32(1);
-
-  feeCumulative.save();
-
-  log.info("Fee Cumulative saved", ["Feels good"]);
-
-
-  // RollingFeeDetailsLogsForLast24Hour only captures data for the last 24 hours, counting from the last event
-  let slidingWindow = RollingFeeDetailsLogsForLast24Hour.load(feeDetailLogEntry.tokenAddress.toHex());
-
-  if (!slidingWindow) {
-    slidingWindow = new RollingFeeDetailsLogsForLast24Hour(feeDetailLogEntry.tokenAddress.toHex());
-    slidingWindow.cumulativeGasFee = BigInt.fromI32(0);
-    slidingWindow.cumulativeLpFee = BigInt.fromI32(0);
-    slidingWindow.cumulativeTransferFee = BigInt.fromI32(0);
-    slidingWindow.tokenAddress = feeDetailLogEntry.tokenAddress;
-    slidingWindow.count = BigInt.fromI32(0);
-    slidingWindow.logs = new Array<string>();
-  }
-
-  let oldFeeDetailsLogs = slidingWindow.logs;
-  let newFeeDetailsLogs = new Array<string>();
-  newFeeDetailsLogs.push(feeDetailLogEntry.id);
-
-  // add the current feeDetailLogEntry to the sliding window
-
-  // add the current feeDetailLogEntry to the cumulative values
-  slidingWindow.cumulativeGasFee += feeDetailLogEntry.gasFee;
-  slidingWindow.cumulativeLpFee += feeDetailLogEntry.lpFee;
-  slidingWindow.cumulativeTransferFee += feeDetailLogEntry.transferFee;
-  slidingWindow.count += BigInt.fromI32(1);
-
-  log.info("Sliding window added values {} {} {}",
-    [slidingWindow.cumulativeGasFee.toString(),
-    slidingWindow.cumulativeLpFee.toString(),
-    slidingWindow.cumulativeTransferFee.toString()]
-  );
-
-  //let oldLogs = slidingWindow.logs;
-  log.info("assigned old logs", []);
-  log.info("old fee logs length {}", [oldFeeDetailsLogs.length.toString()]);
-
-  // sliding window calculation
-  for (let i = 0; i < oldFeeDetailsLogs.length; i++) {
-    // for every feeDetailLogEntry in the rolling window, check if they are old enough to remove
-    // if so, then remove and also decrease their values from cumulative rolling window values
-    log.info("Sliding window fee loop enterred", []);
-    let oldFee = FeeDetailLogEntry.load(oldFeeDetailsLogs[i]);
-    if (!oldFee) continue;
-    if (feeDetailLogEntry.timestamp.minus(oldFee.timestamp) > BigInt.fromI32(86400)) {
-      slidingWindow.cumulativeGasFee = slidingWindow.cumulativeGasFee.minus(oldFee.gasFee);
-      slidingWindow.cumulativeLpFee = slidingWindow.cumulativeLpFee.minus(oldFee.lpFee);
-      slidingWindow.cumulativeTransferFee = slidingWindow.cumulativeTransferFee.minus(oldFee.transferFee);
-      slidingWindow.count = slidingWindow.count.minus(BigInt.fromI32(1));
-      log.info("old fee removed", [oldFee.timestamp.toString()]);
-    } else {
-      newFeeDetailsLogs.push(oldFee.id);
-    }
-  }
-  log.info("new fee logs length {}", [newFeeDetailsLogs.length.toString()]);
-
-  slidingWindow.logs = newFeeDetailsLogs;
-  slidingWindow.save();
-
-  const epochModSecondsInADay = feeDetailLogEntry.timestamp.mod(BigInt.fromI32(86400));
-
-  log.info("Day epoch {}", [epochModSecondsInADay.toString()]);
-
-  const dayEpoch = feeDetailLogEntry.timestamp.minus(epochModSecondsInADay);
-
-  let todayFeeDetailsLog = DailyFeeDetailsLog.load(`${dayEpoch.toString()}-${feeDetailLogEntry.tokenAddress.toHex()}`);
-
-  if (!todayFeeDetailsLog) {
-    todayFeeDetailsLog = new DailyFeeDetailsLog(`${dayEpoch.toString()}-${feeDetailLogEntry.tokenAddress.toHex()}`);
-    todayFeeDetailsLog.cumulativeGasFee = BigInt.fromI32(0);
-    todayFeeDetailsLog.cumulativeLpFee = BigInt.fromI32(0);
-    todayFeeDetailsLog.cumulativeTransferFee = BigInt.fromI32(0);
-    todayFeeDetailsLog.tokenAddress = feeDetailLogEntry.tokenAddress;
-    todayFeeDetailsLog.count = BigInt.fromI32(0);
-    todayFeeDetailsLog.timestamp = dayEpoch;
-  }
-
-  todayFeeDetailsLog.cumulativeGasFee = todayFeeDetailsLog.cumulativeGasFee.plus(feeDetailLogEntry.gasFee);
-  todayFeeDetailsLog.cumulativeLpFee = todayFeeDetailsLog.cumulativeLpFee.plus(feeDetailLogEntry.lpFee);
-  todayFeeDetailsLog.cumulativeTransferFee = todayFeeDetailsLog.cumulativeTransferFee.plus(feeDetailLogEntry.transferFee);
-  todayFeeDetailsLog.count += BigInt.fromI32(1);
-
-  feeDetailLogEntry.save();
-  log.info("fee detail log entry saved", ["Feels good"]);
-  todayFeeDetailsLog.save();
-  log.info("today fee saved", ["Feels good"]);
-}
-
-
 
 export function updateIncentivePoolBalance(txId: string, tokenAddress: Address, timestamp: BigInt, eventAddress: Address): void {
   const liquidityPoolContract = LiquidityPool.bind(eventAddress);
   const currentIncentivePoolBalance = liquidityPoolContract.incentivePool(tokenAddress);
 
-  const logKey = `${txId}-${tokenAddress.toHex()}`;
+  const logKey = `${txId} - ${tokenAddress.toHex()}`;
   let incentivePoolBalanceLogEntry = IncentivePoolBalanceLogEntry.load(logKey);
   if (!incentivePoolBalanceLogEntry) {
     incentivePoolBalanceLogEntry = new IncentivePoolBalanceLogEntry(logKey);
@@ -493,7 +440,7 @@ export function updateIncentivePoolBalance(txId: string, tokenAddress: Address, 
   const epochModSecondsInAHour = timestamp.mod(BigInt.fromI32(3600));
   const hourEpoch = timestamp.minus(epochModSecondsInAHour);
 
-  let hourlyIncentivePoolBalance = HourlyIncentivePoolBalance.load(`${tokenAddress.toHex()}-${hourEpoch.toString()}`);
+  let hourlyIncentivePoolBalance = HourlyIncentivePoolBalance.load(`${tokenAddress.toHex()} - ${hourEpoch.toString()}`);
   if (!hourlyIncentivePoolBalance) {
     hourlyIncentivePoolBalance = new HourlyIncentivePoolBalance(tokenAddress.toHex());
     hourlyIncentivePoolBalance.poolBalance = BigInt.fromI32(0);

@@ -27,12 +27,8 @@ export class CurrentLiquidityChanged__Params {
     return this._event.parameters[0].value.toAddress();
   }
 
-  get oldValue(): BigInt {
-    return this._event.parameters[1].value.toBigInt();
-  }
-
   get newValue(): BigInt {
-    return this._event.parameters[2].value.toBigInt();
+    return this._event.parameters[1].value.toBigInt();
   }
 }
 

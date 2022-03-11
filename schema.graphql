@@ -1,43 +1,34 @@
 # lpFee is equal to transferFeeAmount when transferFeePercent < equilibriumFee
 # when transferFeePercent > equilibriumFee, lpFee is capped, and exceeding portion of
 # transferFeeAmount goes to Arbitragers in the form of Incentive Pool
-type FeeDetailLogEntry @entity {
-  id: ID!
-  lpFee: BigInt!
-  transferFee: BigInt!
-  gasFee: BigInt!
-  timestamp: BigInt!
-  tokenAddress: Bytes!
-}
+# type FeeCumulative @entity {
+#   id: ID!
+#   lpFee: BigInt!
+#   transferFee: BigInt!
+#   gasFee: BigInt!
+#   count: BigInt!
+#   tokenAddress: Bytes!
+# }
 
-type FeeCumulative @entity {
-  id: ID!
-  lpFee: BigInt!
-  transferFee: BigInt!
-  gasFee: BigInt!
-  count: BigInt!
-  tokenAddress: Bytes!
-}
+# type RollingFeeDetailsLogsForLast24Hour @entity {
+#   id: ID!
+#   cumulativeLpFee: BigInt!
+#   cumulativeTransferFee: BigInt!
+#   cumulativeGasFee: BigInt!
+#   logs: [String!]!
+#   count: BigInt!
+#   tokenAddress: Bytes!
+# }
 
-type RollingFeeDetailsLogsForLast24Hour @entity {
-  id: ID!
-  cumulativeLpFee: BigInt!
-  cumulativeTransferFee: BigInt!
-  cumulativeGasFee: BigInt!
-  logs: [String!]!
-  count: BigInt!
-  tokenAddress: Bytes!
-}
-
-type DailyFeeDetailsLog @entity {
-  id: ID!
-  cumulativeLpFee: BigInt!
-  cumulativeTransferFee: BigInt!
-  cumulativeGasFee: BigInt!
-  count: BigInt!
-  timestamp: BigInt!
-  tokenAddress: Bytes!
-}
+# type DailyFeeDetailsLog @entity {
+#   id: ID!
+#   cumulativeLpFee: BigInt!
+#   cumulativeTransferFee: BigInt!
+#   cumulativeGasFee: BigInt!
+#   count: BigInt!
+#   timestamp: BigInt!
+#   tokenAddress: Bytes!
+# }
 
 type Deposit @entity {
   id: ID!
@@ -149,6 +140,36 @@ type AssetSentToUserLogEntry @entity {
   receiver: Bytes!
   depositHash: Bytes!
   fromChainId: BigInt!
+  lpFee: BigInt!
+  transferFee: BigInt!
+  gasFee: BigInt!
+}
+
+type DailyAssetSentPerFromChainAndToken @entity {
+  id: ID!
+  timestamp: BigInt!
+  tokenAddress: Bytes!
+  cumulativeAmount: BigInt!
+  cumulativeTransferredAmount: BigInt!
+  fromChainId: BigInt!
+  cumulativeLpFee: BigInt!
+  cumulativeTransferFee: BigInt!
+  cumulativeGasFee: BigInt!
+  count: BigInt!
+}
+
+type RollingAssetSentForLast24HoursPerChainAndToken @entity {
+  id: ID!
+  count: BigInt!
+  tokenAddress: Bytes!
+  cumulativeAmount: BigInt!
+  cumulativeTransferredAmount: BigInt!
+  depositHash: Bytes!
+  fromChainId: BigInt!
+  cumulativeLpFee: BigInt!
+  cumulativeTransferFee: BigInt!
+  cumulativeGasFee: BigInt!
+  assetSentLogs: [String!]!
 }
 
 type SuppliedLiquidityLogEntry @entity {

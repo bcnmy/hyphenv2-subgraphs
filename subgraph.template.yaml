@@ -30,14 +30,14 @@ dataSources:
         - name: LiquidityPool
           file: ./abis/LiquidityPool.json
       eventHandlers:
-        - event: AssetSent(indexed address,indexed uint256,indexed uint256,address,bytes,uint256)
+        - event: AssetSent(indexed address,indexed uint256,indexed uint256,address,bytes,uint256,uint256,uint256,uint256)
           handler: handleAssetSent
         - event: Deposit(indexed address,indexed address,indexed address,uint256,uint256,uint256,string)
           handler: handleDeposit
         # - event: EthReceived(address,uint256)
         # handler: handleEthReceived
-        - event: FeeDetails(indexed uint256,indexed uint256,indexed uint256,address)
-          handler: handleFeeDetails
+        # - event: FeeDetails(indexed uint256,indexed uint256,indexed uint256,address)
+          # handler: handleFeeDetails
         # - event: GasFeeWithdraw(indexed address,indexed address,indexed uint256)
         #   handler: handleGasFeeWithdraw
         # - event: LiquidityProvidersChanged(indexed address)
@@ -81,6 +81,6 @@ dataSources:
           handler: handleLiquidityRemoved
         - event: FeeAdded(indexed address,indexed uint256)
           handler: handleFeeAdded
-        - event: CurrentLiquidityChanged(indexed address,indexed uint256,indexed uint256)
+        - event: CurrentLiquidityChanged(indexed address,indexed uint256)
           handler: handleCurrentLiquidityChanged
       file: ./src/liquidityProvidersMapping.ts

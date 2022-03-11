@@ -37,6 +37,24 @@
         "internalType": "uint256",
         "name": "fromChainId",
         "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "lpFee",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "transferFee",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "gasFee",
+        "type": "uint256"
       }
     ],
     "name": "AssetSent",
@@ -108,37 +126,6 @@
       }
     ],
     "name": "EthReceived",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "lpFee",
-        "type": "uint256"
-      },
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "transferFee",
-        "type": "uint256"
-      },
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "gasFee",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "transferredToken",
-        "type": "address"
-      }
-    ],
-    "name": "FeeDetails",
     "type": "event"
   },
   {
@@ -247,6 +234,19 @@
       }
     ],
     "name": "Received",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "tokenManagerAddress",
+        "type": "address"
+      }
+    ],
+    "name": "TokenManagerChanged",
     "type": "event"
   },
   {
@@ -395,9 +395,7 @@
       { "internalType": "uint256", "name": "amount", "type": "uint256" }
     ],
     "name": "getTransferFee",
-    "outputs": [
-      { "internalType": "uint256", "name": "fee", "type": "uint256" }
-    ],
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
     "stateMutability": "view",
     "type": "function"
   },
@@ -605,6 +603,15 @@
       }
     ],
     "name": "setLiquidityProviders",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "_tokenManager", "type": "address" }
+    ],
+    "name": "setTokenManager",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
