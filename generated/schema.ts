@@ -20,7 +20,6 @@ export class FeeDetailLogEntry extends Entity {
     this.set("transferFee", Value.fromBigInt(BigInt.zero()));
     this.set("gasFee", Value.fromBigInt(BigInt.zero()));
     this.set("timestamp", Value.fromBigInt(BigInt.zero()));
-    this.set("dailyWindow", Value.fromString(""));
   }
 
   save(): void {
@@ -85,32 +84,6 @@ export class FeeDetailLogEntry extends Entity {
 
   set timestamp(value: BigInt) {
     this.set("timestamp", Value.fromBigInt(value));
-  }
-
-  get rollingWindow(): string | null {
-    let value = this.get("rollingWindow");
-    if (!value || value.kind == ValueKind.NULL) {
-      return null;
-    } else {
-      return value.toString();
-    }
-  }
-
-  set rollingWindow(value: string | null) {
-    if (!value) {
-      this.unset("rollingWindow");
-    } else {
-      this.set("rollingWindow", Value.fromString(<string>value));
-    }
-  }
-
-  get dailyWindow(): string {
-    let value = this.get("dailyWindow");
-    return value!.toString();
-  }
-
-  set dailyWindow(value: string) {
-    this.set("dailyWindow", Value.fromString(value));
   }
 }
 
@@ -196,6 +169,7 @@ export class RollingFeeDetailsLogsForLast24Hour extends Entity {
     this.set("cumulativeLpFee", Value.fromBigInt(BigInt.zero()));
     this.set("cumulativeTransferFee", Value.fromBigInt(BigInt.zero()));
     this.set("cumulativeGasFee", Value.fromBigInt(BigInt.zero()));
+    this.set("logs", Value.fromStringArray(new Array(0)));
     this.set("count", Value.fromBigInt(BigInt.zero()));
   }
 
@@ -257,21 +231,13 @@ export class RollingFeeDetailsLogsForLast24Hour extends Entity {
     this.set("cumulativeGasFee", Value.fromBigInt(value));
   }
 
-  get logs(): Array<string> | null {
+  get logs(): Array<string> {
     let value = this.get("logs");
-    if (!value || value.kind == ValueKind.NULL) {
-      return null;
-    } else {
-      return value.toStringArray();
-    }
+    return value!.toStringArray();
   }
 
-  set logs(value: Array<string> | null) {
-    if (!value) {
-      this.unset("logs");
-    } else {
-      this.set("logs", Value.fromStringArray(<Array<string>>value));
-    }
+  set logs(value: Array<string>) {
+    this.set("logs", Value.fromStringArray(value));
   }
 
   get count(): BigInt {
@@ -351,23 +317,6 @@ export class DailyFeeDetailsLog extends Entity {
     this.set("cumulativeGasFee", Value.fromBigInt(value));
   }
 
-  get logs(): Array<string> | null {
-    let value = this.get("logs");
-    if (!value || value.kind == ValueKind.NULL) {
-      return null;
-    } else {
-      return value.toStringArray();
-    }
-  }
-
-  set logs(value: Array<string> | null) {
-    if (!value) {
-      this.unset("logs");
-    } else {
-      this.set("logs", Value.fromStringArray(<Array<string>>value));
-    }
-  }
-
   get count(): BigInt {
     let value = this.get("count");
     return value!.toBigInt();
@@ -400,8 +349,6 @@ export class Deposit extends Entity {
     this.set("rewardAmount", Value.fromBigInt(BigInt.zero()));
     this.set("amount", Value.fromBigInt(BigInt.zero()));
     this.set("tag", Value.fromString(""));
-    this.set("dailyWindow", Value.fromString(""));
-    this.set("dailyWindowPerChainAndToken", Value.fromString(""));
   }
 
   save(): void {
@@ -500,61 +447,6 @@ export class Deposit extends Entity {
 
   set tag(value: string) {
     this.set("tag", Value.fromString(value));
-  }
-
-  get rollingWindow(): string | null {
-    let value = this.get("rollingWindow");
-    if (!value || value.kind == ValueKind.NULL) {
-      return null;
-    } else {
-      return value.toString();
-    }
-  }
-
-  set rollingWindow(value: string | null) {
-    if (!value) {
-      this.unset("rollingWindow");
-    } else {
-      this.set("rollingWindow", Value.fromString(<string>value));
-    }
-  }
-
-  get rollingWindowPerChainAndToken(): string | null {
-    let value = this.get("rollingWindowPerChainAndToken");
-    if (!value || value.kind == ValueKind.NULL) {
-      return null;
-    } else {
-      return value.toString();
-    }
-  }
-
-  set rollingWindowPerChainAndToken(value: string | null) {
-    if (!value) {
-      this.unset("rollingWindowPerChainAndToken");
-    } else {
-      this.set(
-        "rollingWindowPerChainAndToken",
-        Value.fromString(<string>value)
-      );
-    }
-  }
-
-  get dailyWindow(): string {
-    let value = this.get("dailyWindow");
-    return value!.toString();
-  }
-
-  set dailyWindow(value: string) {
-    this.set("dailyWindow", Value.fromString(value));
-  }
-
-  get dailyWindowPerChainAndToken(): string {
-    let value = this.get("dailyWindowPerChainAndToken");
-    return value!.toString();
-  }
-
-  set dailyWindowPerChainAndToken(value: string) {
-    this.set("dailyWindowPerChainAndToken", Value.fromString(value));
   }
 }
 
@@ -723,6 +615,7 @@ export class RollingDepositVolumeForLast24Hour extends Entity {
 
     this.set("cumulativeRewardAmount", Value.fromBigInt(BigInt.zero()));
     this.set("cumulativeAmount", Value.fromBigInt(BigInt.zero()));
+    this.set("deposits", Value.fromStringArray(new Array(0)));
     this.set("count", Value.fromBigInt(BigInt.zero()));
   }
 
@@ -775,21 +668,13 @@ export class RollingDepositVolumeForLast24Hour extends Entity {
     this.set("cumulativeAmount", Value.fromBigInt(value));
   }
 
-  get deposits(): Array<string> | null {
+  get deposits(): Array<string> {
     let value = this.get("deposits");
-    if (!value || value.kind == ValueKind.NULL) {
-      return null;
-    } else {
-      return value.toStringArray();
-    }
+    return value!.toStringArray();
   }
 
-  set deposits(value: Array<string> | null) {
-    if (!value) {
-      this.unset("deposits");
-    } else {
-      this.set("deposits", Value.fromStringArray(<Array<string>>value));
-    }
+  set deposits(value: Array<string>) {
+    this.set("deposits", Value.fromStringArray(value));
   }
 
   get count(): BigInt {
@@ -809,6 +694,7 @@ export class RollingDepositVolumeForLast24HourPerChainAndToken extends Entity {
 
     this.set("cumulativeRewardAmount", Value.fromBigInt(BigInt.zero()));
     this.set("cumulativeAmount", Value.fromBigInt(BigInt.zero()));
+    this.set("deposits", Value.fromStringArray(new Array(0)));
     this.set("tokenAddress", Value.fromBytes(Bytes.empty()));
     this.set("toChainID", Value.fromBigInt(BigInt.zero()));
     this.set("count", Value.fromBigInt(BigInt.zero()));
@@ -869,21 +755,13 @@ export class RollingDepositVolumeForLast24HourPerChainAndToken extends Entity {
     this.set("cumulativeAmount", Value.fromBigInt(value));
   }
 
-  get deposits(): Array<string> | null {
+  get deposits(): Array<string> {
     let value = this.get("deposits");
-    if (!value || value.kind == ValueKind.NULL) {
-      return null;
-    } else {
-      return value.toStringArray();
-    }
+    return value!.toStringArray();
   }
 
-  set deposits(value: Array<string> | null) {
-    if (!value) {
-      this.unset("deposits");
-    } else {
-      this.set("deposits", Value.fromStringArray(<Array<string>>value));
-    }
+  set deposits(value: Array<string>) {
+    this.set("deposits", Value.fromStringArray(value));
   }
 
   get tokenAddress(): Bytes {
@@ -921,6 +799,7 @@ export class DailyDepositVolume extends Entity {
 
     this.set("cumulativeRewardAmount", Value.fromBigInt(BigInt.zero()));
     this.set("cumulativeAmount", Value.fromBigInt(BigInt.zero()));
+    this.set("deposits", Value.fromStringArray(new Array(0)));
     this.set("count", Value.fromBigInt(BigInt.zero()));
     this.set("timestamp", Value.fromBigInt(BigInt.zero()));
   }
@@ -1006,6 +885,7 @@ export class DailyDepositVolumePerChainAndToken extends Entity {
 
     this.set("cumulativeRewardAmount", Value.fromBigInt(BigInt.zero()));
     this.set("cumulativeAmount", Value.fromBigInt(BigInt.zero()));
+    this.set("deposits", Value.fromStringArray(new Array(0)));
     this.set("toChainID", Value.fromBigInt(BigInt.zero()));
     this.set("tokenAddress", Value.fromBytes(Bytes.empty()));
     this.set("count", Value.fromBigInt(BigInt.zero()));
@@ -1348,23 +1228,6 @@ export class TokenPriceInLPSharesLog extends Entity {
   set tokenAddress(value: Bytes) {
     this.set("tokenAddress", Value.fromBytes(value));
   }
-
-  get rollingApyWindow(): string | null {
-    let value = this.get("rollingApyWindow");
-    if (!value || value.kind == ValueKind.NULL) {
-      return null;
-    } else {
-      return value.toString();
-    }
-  }
-
-  set rollingApyWindow(value: string | null) {
-    if (!value) {
-      this.unset("rollingApyWindow");
-    } else {
-      this.set("rollingApyWindow", Value.fromString(<string>value));
-    }
-  }
 }
 
 export class RollingApyFor24Hour extends Entity {
@@ -1376,6 +1239,7 @@ export class RollingApyFor24Hour extends Entity {
     this.set("lastTokenPriceInLPShares", Value.fromBigInt(BigInt.zero()));
     this.set("apy", Value.fromBigDecimal(BigDecimal.zero()));
     this.set("tokenAddress", Value.fromBytes(Bytes.empty()));
+    this.set("lpLogs", Value.fromStringArray(new Array(0)));
   }
 
   save(): void {
@@ -1442,21 +1306,13 @@ export class RollingApyFor24Hour extends Entity {
     this.set("tokenAddress", Value.fromBytes(value));
   }
 
-  get lpLogs(): Array<string> | null {
+  get lpLogs(): Array<string> {
     let value = this.get("lpLogs");
-    if (!value || value.kind == ValueKind.NULL) {
-      return null;
-    } else {
-      return value.toStringArray();
-    }
+    return value!.toStringArray();
   }
 
-  set lpLogs(value: Array<string> | null) {
-    if (!value) {
-      this.unset("lpLogs");
-    } else {
-      this.set("lpLogs", Value.fromStringArray(<Array<string>>value));
-    }
+  set lpLogs(value: Array<string>) {
+    this.set("lpLogs", Value.fromStringArray(value));
   }
 }
 
@@ -1636,26 +1492,6 @@ export class SuppliedLiquidityLogEntry extends Entity {
   set tokenAddress(value: Bytes) {
     this.set("tokenAddress", Value.fromBytes(value));
   }
-
-  get suppliedLiquidityRollingWindow(): string | null {
-    let value = this.get("suppliedLiquidityRollingWindow");
-    if (!value || value.kind == ValueKind.NULL) {
-      return null;
-    } else {
-      return value.toString();
-    }
-  }
-
-  set suppliedLiquidityRollingWindow(value: string | null) {
-    if (!value) {
-      this.unset("suppliedLiquidityRollingWindow");
-    } else {
-      this.set(
-        "suppliedLiquidityRollingWindow",
-        Value.fromString(<string>value)
-      );
-    }
-  }
 }
 
 export class HourlySuppliedLiquidity extends Entity {
@@ -1746,6 +1582,7 @@ export class RollingSuppliedLiquidityForLast24Hour extends Entity {
     this.set("suppliedLiquidity", Value.fromBigInt(BigInt.zero()));
     this.set("tokenAddress", Value.fromBytes(Bytes.empty()));
     this.set("count", Value.fromBigInt(BigInt.zero()));
+    this.set("logs", Value.fromStringArray(new Array(0)));
   }
 
   save(): void {
@@ -1815,21 +1652,13 @@ export class RollingSuppliedLiquidityForLast24Hour extends Entity {
     this.set("count", Value.fromBigInt(value));
   }
 
-  get logs(): Array<string> | null {
+  get logs(): Array<string> {
     let value = this.get("logs");
-    if (!value || value.kind == ValueKind.NULL) {
-      return null;
-    } else {
-      return value.toStringArray();
-    }
+    return value!.toStringArray();
   }
 
-  set logs(value: Array<string> | null) {
-    if (!value) {
-      this.unset("logs");
-    } else {
-      this.set("logs", Value.fromStringArray(<Array<string>>value));
-    }
+  set logs(value: Array<string>) {
+    this.set("logs", Value.fromStringArray(value));
   }
 }
 
@@ -1899,26 +1728,6 @@ export class AvailableLiquidityLogEntry extends Entity {
 
   set tokenAddress(value: Bytes) {
     this.set("tokenAddress", Value.fromBytes(value));
-  }
-
-  get availableLiquidityRollingWindow(): string | null {
-    let value = this.get("availableLiquidityRollingWindow");
-    if (!value || value.kind == ValueKind.NULL) {
-      return null;
-    } else {
-      return value.toString();
-    }
-  }
-
-  set availableLiquidityRollingWindow(value: string | null) {
-    if (!value) {
-      this.unset("availableLiquidityRollingWindow");
-    } else {
-      this.set(
-        "availableLiquidityRollingWindow",
-        Value.fromString(<string>value)
-      );
-    }
   }
 }
 
@@ -2009,6 +1818,7 @@ export class RollingAvailableLiquidityForLast24Hour extends Entity {
     this.set("availableLiquidity", Value.fromBigInt(BigInt.zero()));
     this.set("tokenAddress", Value.fromBytes(Bytes.empty()));
     this.set("count", Value.fromBigInt(BigInt.zero()));
+    this.set("logs", Value.fromStringArray(new Array(0)));
   }
 
   save(): void {
@@ -2069,21 +1879,13 @@ export class RollingAvailableLiquidityForLast24Hour extends Entity {
     this.set("count", Value.fromBigInt(value));
   }
 
-  get logs(): Array<string> | null {
+  get logs(): Array<string> {
     let value = this.get("logs");
-    if (!value || value.kind == ValueKind.NULL) {
-      return null;
-    } else {
-      return value.toStringArray();
-    }
+    return value!.toStringArray();
   }
 
-  set logs(value: Array<string> | null) {
-    if (!value) {
-      this.unset("logs");
-    } else {
-      this.set("logs", Value.fromStringArray(<Array<string>>value));
-    }
+  set logs(value: Array<string>) {
+    this.set("logs", Value.fromStringArray(value));
   }
 }
 
@@ -2153,26 +1955,6 @@ export class IncentivePoolBalanceLogEntry extends Entity {
 
   set poolBalance(value: BigInt) {
     this.set("poolBalance", Value.fromBigInt(value));
-  }
-
-  get incentivePoolBalanceRollingWindow(): string | null {
-    let value = this.get("incentivePoolBalanceRollingWindow");
-    if (!value || value.kind == ValueKind.NULL) {
-      return null;
-    } else {
-      return value.toString();
-    }
-  }
-
-  set incentivePoolBalanceRollingWindow(value: string | null) {
-    if (!value) {
-      this.unset("incentivePoolBalanceRollingWindow");
-    } else {
-      this.set(
-        "incentivePoolBalanceRollingWindow",
-        Value.fromString(<string>value)
-      );
-    }
   }
 }
 
@@ -2263,6 +2045,7 @@ export class RollingIncentivePoolBalanceForLast24Hour extends Entity {
     this.set("tokenAddress", Value.fromBytes(Bytes.empty()));
     this.set("poolBalance", Value.fromBigInt(BigInt.zero()));
     this.set("count", Value.fromBigInt(BigInt.zero()));
+    this.set("logs", Value.fromStringArray(new Array(0)));
   }
 
   save(): void {
@@ -2327,20 +2110,12 @@ export class RollingIncentivePoolBalanceForLast24Hour extends Entity {
     this.set("count", Value.fromBigInt(value));
   }
 
-  get logs(): Array<string> | null {
+  get logs(): Array<string> {
     let value = this.get("logs");
-    if (!value || value.kind == ValueKind.NULL) {
-      return null;
-    } else {
-      return value.toStringArray();
-    }
+    return value!.toStringArray();
   }
 
-  set logs(value: Array<string> | null) {
-    if (!value) {
-      this.unset("logs");
-    } else {
-      this.set("logs", Value.fromStringArray(<Array<string>>value));
-    }
+  set logs(value: Array<string>) {
+    this.set("logs", Value.fromStringArray(value));
   }
 }

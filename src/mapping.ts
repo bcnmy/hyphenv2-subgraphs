@@ -196,10 +196,14 @@ export function handleDeposit(event: Deposit): void {
     slidingWindow.cumulativeRewardAmount = BigInt.fromI32(0);
     slidingWindow.cumulativeAmount = BigInt.fromI32(0);
     slidingWindow.count = BigInt.fromI32(0);
+    slidingWindow.deposits = new Array<string>();
   }
 
   // add the current feeDetailLogEntry to the sliding window
-  deposit.rollingWindow = slidingWindow.id;
+  // deposit.rollingWindow = slidingWindow.id;
+  let oldDepositLogs = slidingWindow.deposits;
+  let newDepositLogs = new Array<string>();
+  newDepositLogs.push(deposit.id);
 
   // add the current feeDetailLogEntry to the cumulative values
   slidingWindow.cumulativeRewardAmount += deposit.rewardAmount;
@@ -224,53 +228,44 @@ export function handleDeposit(event: Deposit): void {
 
   deposit.rollingWindowPerChainAndToken = slidingWindowPerChainAndToken.id;
 
-  let oldDeposits = slidingWindow.deposits;
-  log.info("Before the garbage loop", []);
-  if (oldDeposits !== null) {
-    log.info("Old deposits is not null", []);
-
-    // sliding window calculation
-    for (let i = 0; i < oldDeposits.length; i++) {
-      // for every feeDetailLogEntry in the rolling window, check if they are old enough to remove
-      // if so, then remove and also decrease their values from cumulative rolling window values
-      let oldDeposit = DepositEntity.load(oldDeposits[i]);
-      log.info("Loaded old deposits", []);
-      if (!oldDeposit) {
-        log.info("no old deposits exist", []);
-      }
-      else if (deposit.timestamp.minus(oldDeposit.timestamp) > BigInt.fromI32(86400)) {
-        log.info("Old deposit cleared", []);
-        oldDeposit.rollingWindow = null;
-        oldDeposit.save();
-        slidingWindow.cumulativeRewardAmount = slidingWindow.cumulativeRewardAmount.minus(oldDeposit.rewardAmount);
-        slidingWindow.cumulativeAmount = slidingWindow.cumulativeAmount.minus(oldDeposit.amount);
-        slidingWindow.count -= BigInt.fromI32(1);
-      } else {
-        log.info("Old deposit not cleared {} {}", [oldDeposit.timestamp.toString(), deposit.timestamp.minus(oldDeposit.timestamp).toString()]);
-      }
-      log.info("Exiting for loop", []);
+  // sliding window calculation
+  for (let i = 0; i < oldDepositLogs.length; i++) {
+    // for every feeDetailLogEntry in the rolling window, check if they are old enough to remove
+    // if so, then remove and also decrease their values from cumulative rolling window values
+    let oldDeposit = DepositEntity.load(oldDepositLogs[i]);
+    log.info("Loaded old deposits", []);
+    if (!oldDeposit) continue;
+    if (deposit.timestamp.minus(oldDeposit.timestamp) > BigInt.fromI32(86400)) {
+      slidingWindow.cumulativeRewardAmount = slidingWindow.cumulativeRewardAmount.minus(oldDeposit.rewardAmount);
+      slidingWindow.cumulativeAmount = slidingWindow.cumulativeAmount.minus(oldDeposit.amount);
+      slidingWindow.count -= BigInt.fromI32(1);
+    } else {
+      newDepositLogs.push(oldDeposit.id);
     }
-    log.info("Didnt enter if", []);
-  } else {
-    log.info("garbage loop not enterred", []);
+    log.info("Exiting for loop", []);
   }
+  slidingWindow.deposits= newDepositLogs;
   slidingWindow.save();
 
-  let oldDepositsPerChainAndToken = slidingWindowPerChainAndToken.deposits;
-  if (oldDepositsPerChainAndToken !== null) {
-    for (let i = 0; i < oldDepositsPerChainAndToken.length; i++) {
-      let oldDepositPerChainAndToken = DepositEntity.load(oldDepositsPerChainAndToken[i]);
+  let newDepositPerChainAndTokenLogs = new Array<string>();
+  newDepositPerChainAndTokenLogs.push(deposit.id);
+  
+  let oldDepositsPerChainAndTokenLogs = slidingWindowPerChainAndToken.deposits;
+  
+    for (let i = 0; i < oldDepositsPerChainAndTokenLogs.length; i++) {
+      let oldDepositPerChainAndToken = DepositEntity.load(oldDepositsPerChainAndTokenLogs[i]);
       if (!oldDepositPerChainAndToken) continue;
       if (deposit.timestamp.minus(oldDepositPerChainAndToken.timestamp) > BigInt.fromI32(86400)) {
-        oldDepositPerChainAndToken.rollingWindowPerChainAndToken = null;
-        oldDepositPerChainAndToken.save();
         slidingWindowPerChainAndToken.cumulativeRewardAmount = slidingWindowPerChainAndToken.cumulativeRewardAmount.minus(oldDepositPerChainAndToken.rewardAmount);
         slidingWindowPerChainAndToken.cumulativeAmount = slidingWindowPerChainAndToken.cumulativeAmount.minus(oldDepositPerChainAndToken.amount);
         slidingWindowPerChainAndToken.count -= BigInt.fromI32(1);
-
+      }
+      else{
+        newDepositPerChainAndTokenLogs.push(oldDepositPerChainAndToken.id);
       }
     }
-  }
+    slidingWindowPerChainAndToken.deposits=newDepositPerChainAndTokenLogs;
+
   slidingWindowPerChainAndToken.save();
 
   const epochModSecondsInADay = deposit.timestamp.mod(BigInt.fromI32(86400));
@@ -401,10 +396,14 @@ export function handleFeeDetails(event: FeeDetails): void {
     slidingWindow.cumulativeLpFee = BigInt.fromI32(0);
     slidingWindow.cumulativeTransferFee = BigInt.fromI32(0);
     slidingWindow.count = BigInt.fromI32(0);
+    slidingWindow.logs = new Array<string>();
   }
 
+  let oldFeeDetailsLogs = slidingWindow.logs;
+  let newFeeDetailsLogs = new Array<string>();
+  newFeeDetailsLogs.push(feeDetailLogEntry.id);
+
   // add the current feeDetailLogEntry to the sliding window
-  feeDetailLogEntry.rollingWindow = slidingWindow.id;
 
   // add the current feeDetailLogEntry to the cumulative values
   slidingWindow.cumulativeGasFee += feeDetailLogEntry.gasFee;
@@ -420,30 +419,29 @@ export function handleFeeDetails(event: FeeDetails): void {
 
   //let oldLogs = slidingWindow.logs;
   log.info("assigned old logs", []);
+  log.info("old fee logs length {}", [oldFeeDetailsLogs.length.toString()]);
 
-  let oldFees = slidingWindow.logs;
-  if (oldFees !== null) {
-    // sliding window calculation
-    for (let i = 0; i < oldFees.length; i++) {
-      // for every feeDetailLogEntry in the rolling window, check if they are old enough to remove
-      // if so, then remove and also decrease their values from cumulative rolling window values
-      let oldFee = FeeDetailLogEntry.load(oldFees[i]);
-      if (!oldFee) continue;
-      if (feeDetailLogEntry.timestamp.minus(oldFee.timestamp) > BigInt.fromI32(86400)) {
-        oldFee.rollingWindow = null;
-        oldFee.save();
-        slidingWindow.cumulativeGasFee = slidingWindow.cumulativeGasFee.minus(oldFee.gasFee);
-        slidingWindow.cumulativeLpFee = slidingWindow.cumulativeLpFee.minus(oldFee.lpFee);
-        slidingWindow.cumulativeTransferFee = slidingWindow.cumulativeTransferFee.minus(oldFee.transferFee);
-        slidingWindow.count -= BigInt.fromI32(1);
-      }
+  // sliding window calculation
+  for (let i = 0; i < oldFeeDetailsLogs.length; i++) {
+    // for every feeDetailLogEntry in the rolling window, check if they are old enough to remove
+    // if so, then remove and also decrease their values from cumulative rolling window values
+    log.info("Sliding window fee loop enterred", []);
+    let oldFee = FeeDetailLogEntry.load(oldFeeDetailsLogs[i]);
+    if (!oldFee) continue;
+    if (feeDetailLogEntry.timestamp.minus(oldFee.timestamp) > BigInt.fromI32(86400)) {
+      slidingWindow.cumulativeGasFee = slidingWindow.cumulativeGasFee.minus(oldFee.gasFee);
+      slidingWindow.cumulativeLpFee = slidingWindow.cumulativeLpFee.minus(oldFee.lpFee);
+      slidingWindow.cumulativeTransferFee = slidingWindow.cumulativeTransferFee.minus(oldFee.transferFee);
+      slidingWindow.count = slidingWindow.count.minus(BigInt.fromI32(1));
+      log.info("old fee removed", [oldFee.timestamp.toString()]);
+    } else {
+      newFeeDetailsLogs.push(oldFee.id);
     }
   }
+  log.info("new fee logs length {}", [newFeeDetailsLogs.length.toString()]);
 
-  log.info("skipped", []);
-
+  slidingWindow.logs = newFeeDetailsLogs;
   slidingWindow.save();
-  log.info("Sliding window saved", ["Feels good"]);
 
   const epochModSecondsInADay = feeDetailLogEntry.timestamp.mod(BigInt.fromI32(86400));
 
@@ -467,7 +465,6 @@ export function handleFeeDetails(event: FeeDetails): void {
   todayFeeDetailsLog.cumulativeTransferFee = todayFeeDetailsLog.cumulativeTransferFee.plus(feeDetailLogEntry.transferFee);
   todayFeeDetailsLog.count += BigInt.fromI32(1);
 
-  feeDetailLogEntry.dailyWindow = todayFeeDetailsLog.id;
   feeDetailLogEntry.save();
   log.info("fee detail log entry saved", ["Feels good"]);
   todayFeeDetailsLog.save();

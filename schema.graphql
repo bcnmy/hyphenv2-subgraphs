@@ -7,8 +7,6 @@ type FeeDetailLogEntry @entity {
   transferFee: BigInt!
   gasFee: BigInt!
   timestamp: BigInt!
-  rollingWindow: RollingFeeDetailsLogsForLast24Hour
-  dailyWindow: DailyFeeDetailsLog!
 }
 
 type FeeCumulative @entity {
@@ -24,7 +22,7 @@ type RollingFeeDetailsLogsForLast24Hour @entity {
   cumulativeLpFee: BigInt!
   cumulativeTransferFee: BigInt!
   cumulativeGasFee: BigInt!
-  logs: [FeeDetailLogEntry!] @derivedFrom(field: "rollingWindow")
+  logs: [String!]!
   count: BigInt!
 }
 
@@ -33,7 +31,6 @@ type DailyFeeDetailsLog @entity {
   cumulativeLpFee: BigInt!
   cumulativeTransferFee: BigInt!
   cumulativeGasFee: BigInt!
-  logs: [FeeDetailLogEntry!] @derivedFrom(field: "dailyWindow")
   count: BigInt!
   timestamp: BigInt!
 }
@@ -48,10 +45,6 @@ type Deposit @entity {
   rewardAmount: BigInt!
   amount: BigInt!
   tag: String!
-  rollingWindow: RollingDepositVolumeForLast24Hour
-  rollingWindowPerChainAndToken: RollingDepositVolumeForLast24HourPerChainAndToken
-  dailyWindow: DailyDepositVolume!
-  dailyWindowPerChainAndToken: DailyDepositVolumePerChainAndToken!
 }
 
 type DepositVolumeCumulative @entity {
@@ -74,7 +67,7 @@ type RollingDepositVolumeForLast24Hour @entity {
   id: ID!
   cumulativeRewardAmount: BigInt!
   cumulativeAmount: BigInt!
-  deposits: [Deposit!] @derivedFrom(field: "rollingWindow")
+  deposits: [String!]!
   count: BigInt!
 }
 
@@ -82,7 +75,7 @@ type RollingDepositVolumeForLast24HourPerChainAndToken @entity {
   id: ID!
   cumulativeRewardAmount: BigInt!
   cumulativeAmount: BigInt!
-  deposits: [Deposit!] @derivedFrom(field: "rollingWindowPerChainAndToken")
+  deposits: [String!]!
   tokenAddress: Bytes!
   toChainID: BigInt!
   count: BigInt!
@@ -92,7 +85,7 @@ type DailyDepositVolume @entity {
   id: ID!
   cumulativeRewardAmount: BigInt!
   cumulativeAmount: BigInt!
-  deposits: [Deposit!]! @derivedFrom(field: "dailyWindow")
+  deposits: [String!]!
   count: BigInt!
   timestamp: BigInt!
 }
@@ -101,7 +94,7 @@ type DailyDepositVolumePerChainAndToken @entity {
   id: ID!
   cumulativeRewardAmount: BigInt!
   cumulativeAmount: BigInt!
-  deposits: [Deposit!]! @derivedFrom(field: "dailyWindowPerChainAndToken")
+  deposits: [String!]!
   toChainID: BigInt!
   tokenAddress: Bytes!
   count: BigInt!
@@ -132,7 +125,6 @@ type TokenPriceInLPSharesLog @entity {
   timestamp: BigInt!
   tokenPriceInLPShares: BigInt!
   tokenAddress: Bytes!
-  rollingApyWindow: RollingApyFor24Hour
 }
 
 type RollingApyFor24Hour @entity {
@@ -141,7 +133,7 @@ type RollingApyFor24Hour @entity {
   lastTokenPriceInLPShares: BigInt!
   apy: BigDecimal!
   tokenAddress: Bytes!
-  lpLogs: [TokenPriceInLPSharesLog!] @derivedFrom(field: "rollingApyWindow")
+  lpLogs: [String!]!
 }
 
 type AssetSentToUserLogEntry @entity {
@@ -160,7 +152,6 @@ type SuppliedLiquidityLogEntry @entity {
   timestamp: BigInt!
   suppliedLiquidity: BigInt!
   tokenAddress: Bytes!
-  suppliedLiquidityRollingWindow: RollingSuppliedLiquidityForLast24Hour
 }
 
 type HourlySuppliedLiquidity @entity {
@@ -177,15 +168,14 @@ type RollingSuppliedLiquidityForLast24Hour @entity {
   suppliedLiquidity: BigInt!
   tokenAddress: Bytes!
   count: BigInt!
-  logs: [SuppliedLiquidityLogEntry!] @derivedFrom(field: "suppliedLiquidityRollingWindow")
-  }
+  logs: [String!]!
+}
 
 type AvailableLiquidityLogEntry @entity {
   id: ID!
   timestamp: BigInt!
   availableLiquidity: BigInt!
   tokenAddress: Bytes!
-  availableLiquidityRollingWindow: RollingAvailableLiquidityForLast24Hour
 }
 
 type HourlyAvailableLiquidity @entity {
@@ -201,8 +191,7 @@ type RollingAvailableLiquidityForLast24Hour @entity {
   availableLiquidity: BigInt!
   tokenAddress: Bytes!
   count: BigInt!
-  logs: [AvailableLiquidityLogEntry!]
-    @derivedFrom(field: "availableLiquidityRollingWindow")
+  logs: [String!]!
 }
 
 type IncentivePoolBalanceLogEntry @entity {
@@ -210,21 +199,19 @@ type IncentivePoolBalanceLogEntry @entity {
   tokenAddress: Bytes!
   timestamp: BigInt!
   poolBalance: BigInt!
-  incentivePoolBalanceRollingWindow: RollingIncentivePoolBalanceForLast24Hour
 }
 type HourlyIncentivePoolBalance @entity {
   id: ID!
   timestamp: BigInt!
   tokenAddress: Bytes!
-  poolBalance:BigInt!
+  poolBalance: BigInt!
   count: BigInt!
 }
 
 type RollingIncentivePoolBalanceForLast24Hour @entity {
   id: ID!
   tokenAddress: Bytes!
-  poolBalance:BigInt!
+  poolBalance: BigInt!
   count: BigInt!
-  logs: [IncentivePoolBalanceLogEntry!]
-    @derivedFrom(field: "incentivePoolBalanceRollingWindow")
+  logs: [String!]!
 }
