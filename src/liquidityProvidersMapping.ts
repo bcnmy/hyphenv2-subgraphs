@@ -124,6 +124,8 @@ export function handleFeeAdded(event: FeeAdded): void {
   if (!rollingApyFor24Hour) {
     rollingApyFor24Hour = new RollingApyFor24Hour(tokenPriceInLPSharesLog.tokenAddress.toHexString());
     rollingApyFor24Hour.firstTokenPriceInLPShares = currentTokenPriceInLPShares;
+    rollingApyFor24Hour.firstLog = tokenPriceInLPSharesLog.id;
+    
     rollingApyFor24Hour.tokenAddress = tokenPriceInLPSharesLog.tokenAddress;
     rollingApyFor24Hour.lpLogs = new Array<string>();
   }
@@ -140,10 +142,12 @@ export function handleFeeAdded(event: FeeAdded): void {
       } else {
         log.info("Found first okay log, keeping firstTokenPriceInLPShares:", [oldLpLog.tokenPriceInLPShares.toString()]);
         rollingApyFor24Hour.lastTokenPriceInLPShares = oldLpLog.tokenPriceInLPShares;
+        rollingApyFor24Hour.lastLog = oldLpLog.id;
         break;
       }
     } else {
       rollingApyFor24Hour.lastTokenPriceInLPShares = currentTokenPriceInLPShares;
+      rollingApyFor24Hour.lastLog = tokenPriceInLPSharesLog.id;
       break;
     }
   }

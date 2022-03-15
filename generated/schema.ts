@@ -915,6 +915,8 @@ export class RollingApyFor24Hour extends Entity {
     this.set("apy", Value.fromBigDecimal(BigDecimal.zero()));
     this.set("tokenAddress", Value.fromBytes(Bytes.empty()));
     this.set("lpLogs", Value.fromStringArray(new Array(0)));
+    this.set("firstLog", Value.fromString(""));
+    this.set("lastLog", Value.fromString(""));
   }
 
   save(): void {
@@ -988,6 +990,24 @@ export class RollingApyFor24Hour extends Entity {
 
   set lpLogs(value: Array<string>) {
     this.set("lpLogs", Value.fromStringArray(value));
+  }
+
+  get firstLog(): string {
+    let value = this.get("firstLog");
+    return value!.toString();
+  }
+
+  set firstLog(value: string) {
+    this.set("firstLog", Value.fromString(value));
+  }
+
+  get lastLog(): string {
+    let value = this.get("lastLog");
+    return value!.toString();
+  }
+
+  set lastLog(value: string) {
+    this.set("lastLog", Value.fromString(value));
   }
 }
 

@@ -129,6 +129,8 @@ type RollingApyFor24Hour @entity {
   apy: BigDecimal!
   tokenAddress: Bytes!
   lpLogs: [String!]!
+  firstLog: String!
+  lastLog: String!
 }
 
 type AssetSentToUserLogEntry @entity {
