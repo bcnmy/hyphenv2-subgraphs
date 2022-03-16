@@ -123,12 +123,14 @@ export function handleFeeAdded(event: FeeAdded): void {
   let rollingApyFor24Hour = RollingApyFor24Hour.load(tokenPriceInLPSharesLog.tokenAddress.toHexString());
   if (!rollingApyFor24Hour) {
     rollingApyFor24Hour = new RollingApyFor24Hour(tokenPriceInLPSharesLog.tokenAddress.toHexString());
-    rollingApyFor24Hour.firstTokenPriceInLPShares = currentTokenPriceInLPShares;
-    rollingApyFor24Hour.firstLog = tokenPriceInLPSharesLog.id;
-    
     rollingApyFor24Hour.tokenAddress = tokenPriceInLPSharesLog.tokenAddress;
     rollingApyFor24Hour.lpLogs = new Array<string>();
+    // log.info("Last LP Log: outside loop", [rollingApyFor24Hour.lastLog]);
   }
+  rollingApyFor24Hour.lastTokenPriceInLPShares = currentTokenPriceInLPShares;
+  rollingApyFor24Hour.lastLog = tokenPriceInLPSharesLog.id;
+  log.info("First LP Log: {}", [rollingApyFor24Hour.firstLog]);
+
 
   let oldLpLogs = rollingApyFor24Hour.lpLogs;
 
@@ -136,21 +138,24 @@ export function handleFeeAdded(event: FeeAdded): void {
     if (oldLpLogs.length > 0) {
       let oldLpLog = TokenPriceInLPSharesLog.load(oldLpLogs[0]);
       if (!oldLpLog) continue;
-      if (tokenPriceInLPSharesLog.timestamp.minus(oldLpLog.timestamp) > BigInt.fromI32(86400)) {
+      if (tokenPriceInLPSharesLog.timestamp.minus(oldLpLog.timestamp).gt(BigInt.fromI32(86400))) {
         log.info("Found old log, removing", []);
         oldLpLogs.shift();
       } else {
         log.info("Found first okay log, keeping firstTokenPriceInLPShares:", [oldLpLog.tokenPriceInLPShares.toString()]);
-        rollingApyFor24Hour.lastTokenPriceInLPShares = oldLpLog.tokenPriceInLPShares;
-        rollingApyFor24Hour.lastLog = oldLpLog.id;
+        rollingApyFor24Hour.firstTokenPriceInLPShares = oldLpLog.tokenPriceInLPShares;
+        rollingApyFor24Hour.firstLog = oldLpLog.id;
+        log.info("Last LP in loop Log: {} Timestamp: {}", [oldLpLog.id, oldLpLog.timestamp.toString()]);
         break;
       }
     } else {
-      rollingApyFor24Hour.lastTokenPriceInLPShares = currentTokenPriceInLPShares;
-      rollingApyFor24Hour.lastLog = tokenPriceInLPSharesLog.id;
+      rollingApyFor24Hour.firstTokenPriceInLPShares = currentTokenPriceInLPShares;
+      log.info("LP LOG: First is equal to last {}", [rollingApyFor24Hour.firstLog]);
       break;
     }
   }
+  log.info("Last LP Log: outside loop {}", [rollingApyFor24Hour.lastLog]);
+
 
   rollingApyFor24Hour.apy = calculateApy(rollingApyFor24Hour.firstTokenPriceInLPShares, rollingApyFor24Hour.lastTokenPriceInLPShares);
 
