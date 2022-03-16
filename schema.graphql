@@ -143,8 +143,11 @@ type AssetSentToUserLogEntry @entity {
   depositHash: Bytes!
   fromChainId: BigInt!
   lpFee: BigInt!
+  lpFeePercent: BigDecimal!
   transferFee: BigInt!
+  transferFeePercent: BigDecimal!
   gasFee: BigInt!
+  gasFeePercent: BigDecimal!
 }
 
 type DailyAssetSentPerFromChainAndToken @entity {
@@ -155,8 +158,11 @@ type DailyAssetSentPerFromChainAndToken @entity {
   cumulativeTransferredAmount: BigInt!
   fromChainId: BigInt!
   cumulativeLpFee: BigInt!
+  averageLpFeePercent: BigDecimal!
   cumulativeTransferFee: BigInt!
+  averageTransferFeePercent: BigDecimal!
   cumulativeGasFee: BigInt!
+  averageGasFeePercent: BigDecimal!
   count: BigInt!
 }
 
@@ -169,8 +175,11 @@ type RollingAssetSentForLast24HoursPerChainAndToken @entity {
   depositHash: Bytes!
   fromChainId: BigInt!
   cumulativeLpFee: BigInt!
+  averageLpFeePercent: BigDecimal!
   cumulativeTransferFee: BigInt!
+  averageTransferFeePercent: BigDecimal!
   cumulativeGasFee: BigInt!
+  averageGasFeePercent: BigDecimal!
   assetSentLogs: [String!]!
 }
 

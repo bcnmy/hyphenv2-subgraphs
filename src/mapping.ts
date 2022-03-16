@@ -128,8 +128,11 @@ export function handleAssetSent(event: AssetSent): void {
   assetSent.fromChainId = event.params.fromChainId;
   assetSent.timestamp = event.block.timestamp;
   assetSent.lpFee = event.params.lpFee;
+  assetSent.lpFeePercent = event.params.lpFee.divDecimal(assetSent.amount.toBigDecimal()).times(BigInt.fromI32(100).toBigDecimal());
   assetSent.transferFee = event.params.transferFee;
+  assetSent.transferFeePercent = event.params.transferFee.divDecimal(assetSent.amount.toBigDecimal()).times(BigInt.fromI32(100).toBigDecimal());
   assetSent.gasFee = event.params.gasFee;
+  assetSent.gasFeePercent = event.params.gasFee.divDecimal(assetSent.amount.toBigDecimal()).times(BigInt.fromI32(100).toBigDecimal());
 
   assetSent.save();
 
@@ -146,16 +149,26 @@ export function handleAssetSent(event: AssetSent): void {
     dailyAssetSentPerFromChainAndToken.cumulativeTransferredAmount = BigInt.fromI32(0);
     dailyAssetSentPerFromChainAndToken.count = BigInt.fromI32(0);
     dailyAssetSentPerFromChainAndToken.cumulativeLpFee = BigInt.fromI32(0);
+    dailyAssetSentPerFromChainAndToken.averageLpFeePercent = BigInt.fromI32(0).toBigDecimal();
     dailyAssetSentPerFromChainAndToken.cumulativeTransferFee = BigInt.fromI32(0);
+    dailyAssetSentPerFromChainAndToken.averageTransferFeePercent = BigInt.fromI32(0).toBigDecimal();
     dailyAssetSentPerFromChainAndToken.cumulativeGasFee = BigInt.fromI32(0);
+    dailyAssetSentPerFromChainAndToken.averageGasFeePercent = BigInt.fromI32(0).toBigDecimal();
     dailyAssetSentPerFromChainAndToken.timestamp = dayEpoch;
   }
 
   dailyAssetSentPerFromChainAndToken.cumulativeAmount = dailyAssetSentPerFromChainAndToken.cumulativeAmount.plus(assetSent.amount);
   dailyAssetSentPerFromChainAndToken.cumulativeTransferredAmount = dailyAssetSentPerFromChainAndToken.cumulativeTransferredAmount.plus(assetSent.transferredAmount);
+
   dailyAssetSentPerFromChainAndToken.cumulativeLpFee = dailyAssetSentPerFromChainAndToken.cumulativeLpFee.plus(assetSent.lpFee);
+  dailyAssetSentPerFromChainAndToken.averageLpFeePercent = dailyAssetSentPerFromChainAndToken.averageLpFeePercent.times(dailyAssetSentPerFromChainAndToken.count.toBigDecimal()).plus(assetSent.lpFeePercent).div(dailyAssetSentPerFromChainAndToken.count.toBigDecimal().plus(BigInt.fromI32(1).toBigDecimal()));
+
   dailyAssetSentPerFromChainAndToken.cumulativeGasFee = dailyAssetSentPerFromChainAndToken.cumulativeGasFee.plus(assetSent.gasFee);
+  dailyAssetSentPerFromChainAndToken.averageGasFeePercent = dailyAssetSentPerFromChainAndToken.averageGasFeePercent.times(dailyAssetSentPerFromChainAndToken.count.toBigDecimal()).plus(assetSent.gasFeePercent).div(dailyAssetSentPerFromChainAndToken.count.toBigDecimal().plus(BigInt.fromI32(1).toBigDecimal()));
+
   dailyAssetSentPerFromChainAndToken.cumulativeTransferFee = dailyAssetSentPerFromChainAndToken.cumulativeTransferFee.plus(assetSent.transferFee);
+  dailyAssetSentPerFromChainAndToken.averageTransferFeePercent = dailyAssetSentPerFromChainAndToken.averageTransferFeePercent.times(dailyAssetSentPerFromChainAndToken.count.toBigDecimal()).plus(assetSent.transferFeePercent).div(dailyAssetSentPerFromChainAndToken.count.toBigDecimal().plus(BigInt.fromI32(1).toBigDecimal()));
+
   dailyAssetSentPerFromChainAndToken.count = dailyAssetSentPerFromChainAndToken.count.plus(BigInt.fromI32(1));
   log.info("daily Asset sent count increased", []);
 
@@ -170,17 +183,31 @@ export function handleAssetSent(event: AssetSent): void {
     assetSentRollingWindow.cumulativeAmount = BigInt.fromI32(0);
     assetSentRollingWindow.cumulativeTransferredAmount = BigInt.fromI32(0);
     assetSentRollingWindow.count = BigInt.fromI32(0);
+
     assetSentRollingWindow.cumulativeLpFee = BigInt.fromI32(0);
+    assetSentRollingWindow.averageLpFeePercent = BigInt.fromI32(0).toBigDecimal();
+
     assetSentRollingWindow.cumulativeTransferFee = BigInt.fromI32(0);
+    assetSentRollingWindow.averageTransferFeePercent = BigInt.fromI32(0).toBigDecimal();
+
     assetSentRollingWindow.cumulativeGasFee = BigInt.fromI32(0);
+    assetSentRollingWindow.averageGasFeePercent = BigInt.fromI32(0).toBigDecimal();
+
     assetSentRollingWindow.assetSentLogs = new Array<string>();
   }
 
   assetSentRollingWindow.cumulativeAmount = dailyAssetSentPerFromChainAndToken.cumulativeAmount.plus(assetSent.amount);
   assetSentRollingWindow.cumulativeTransferredAmount = dailyAssetSentPerFromChainAndToken.cumulativeTransferredAmount.plus(assetSent.transferredAmount);
+
   assetSentRollingWindow.cumulativeLpFee = dailyAssetSentPerFromChainAndToken.cumulativeLpFee.plus(assetSent.lpFee);
+  assetSentRollingWindow.averageLpFeePercent = dailyAssetSentPerFromChainAndToken.averageLpFeePercent.times(assetSentRollingWindow.count.toBigDecimal()).plus(assetSent.lpFeePercent).div(assetSentRollingWindow.count.toBigDecimal().plus(BigInt.fromI32(1).toBigDecimal()));
+
   assetSentRollingWindow.cumulativeGasFee = dailyAssetSentPerFromChainAndToken.cumulativeGasFee.plus(assetSent.gasFee);
+  assetSentRollingWindow.averageGasFeePercent = dailyAssetSentPerFromChainAndToken.averageGasFeePercent.times(assetSentRollingWindow.count.toBigDecimal()).plus(assetSent.gasFeePercent).div(assetSentRollingWindow.count.toBigDecimal().plus(BigInt.fromI32(1).toBigDecimal()));
+
   assetSentRollingWindow.cumulativeTransferFee = dailyAssetSentPerFromChainAndToken.cumulativeTransferFee.plus(assetSent.transferFee);
+  assetSentRollingWindow.averageTransferFeePercent = dailyAssetSentPerFromChainAndToken.averageTransferFeePercent.times(assetSentRollingWindow.count.toBigDecimal()).plus(assetSent.transferFeePercent).div(assetSentRollingWindow.count.toBigDecimal().plus(BigInt.fromI32(1).toBigDecimal()));
+
   assetSentRollingWindow.count = assetSentRollingWindow.count.plus(BigInt.fromI32(1));
 
   let oldAssetSentLogs = assetSentRollingWindow.assetSentLogs;
@@ -192,9 +219,16 @@ export function handleAssetSent(event: AssetSent): void {
       if (assetSent.timestamp.minus(oldAssetSentLog.timestamp).gt(BigInt.fromI32(86400))) {
         assetSentRollingWindow.cumulativeAmount = assetSentRollingWindow.cumulativeAmount.minus(oldAssetSentLog.amount);
         assetSentRollingWindow.cumulativeTransferredAmount = assetSentRollingWindow.cumulativeTransferredAmount.minus(oldAssetSentLog.transferredAmount);
+
         assetSentRollingWindow.cumulativeGasFee = assetSentRollingWindow.cumulativeGasFee.minus(oldAssetSentLog.gasFee);
+        assetSentRollingWindow.averageGasFeePercent = assetSentRollingWindow.averageGasFeePercent.times(assetSentRollingWindow.count.toBigDecimal()).minus(oldAssetSentLog.gasFeePercent).div(assetSentRollingWindow.count.toBigDecimal().minus(BigInt.fromI32(1).toBigDecimal()));
+
         assetSentRollingWindow.cumulativeLpFee = assetSentRollingWindow.cumulativeLpFee.minus(oldAssetSentLog.lpFee);
+        assetSentRollingWindow.averageLpFeePercent = assetSentRollingWindow.averageLpFeePercent.times(assetSentRollingWindow.count.toBigDecimal()).minus(oldAssetSentLog.lpFeePercent).div(assetSentRollingWindow.count.toBigDecimal().minus(BigInt.fromI32(1).toBigDecimal()));
+
         assetSentRollingWindow.cumulativeTransferFee = assetSentRollingWindow.cumulativeTransferFee.minus(oldAssetSentLog.transferFee);
+        assetSentRollingWindow.averageTransferFeePercent = assetSentRollingWindow.averageTransferFeePercent.times(assetSentRollingWindow.count.toBigDecimal()).minus(oldAssetSentLog.transferFeePercent).div(assetSentRollingWindow.count.toBigDecimal().minus(BigInt.fromI32(1).toBigDecimal()));
+
         assetSentRollingWindow.count = assetSentRollingWindow.count.minus(BigInt.fromI32(1));
         oldAssetSentLogs.shift();
         log.info("Asset sent count decreased", []);

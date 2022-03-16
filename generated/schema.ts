@@ -1024,8 +1024,11 @@ export class AssetSentToUserLogEntry extends Entity {
     this.set("depositHash", Value.fromBytes(Bytes.empty()));
     this.set("fromChainId", Value.fromBigInt(BigInt.zero()));
     this.set("lpFee", Value.fromBigInt(BigInt.zero()));
+    this.set("lpFeePercent", Value.fromBigDecimal(BigDecimal.zero()));
     this.set("transferFee", Value.fromBigInt(BigInt.zero()));
+    this.set("transferFeePercent", Value.fromBigDecimal(BigDecimal.zero()));
     this.set("gasFee", Value.fromBigInt(BigInt.zero()));
+    this.set("gasFeePercent", Value.fromBigDecimal(BigDecimal.zero()));
   }
 
   save(): void {
@@ -1131,6 +1134,15 @@ export class AssetSentToUserLogEntry extends Entity {
     this.set("lpFee", Value.fromBigInt(value));
   }
 
+  get lpFeePercent(): BigDecimal {
+    let value = this.get("lpFeePercent");
+    return value!.toBigDecimal();
+  }
+
+  set lpFeePercent(value: BigDecimal) {
+    this.set("lpFeePercent", Value.fromBigDecimal(value));
+  }
+
   get transferFee(): BigInt {
     let value = this.get("transferFee");
     return value!.toBigInt();
@@ -1140,6 +1152,15 @@ export class AssetSentToUserLogEntry extends Entity {
     this.set("transferFee", Value.fromBigInt(value));
   }
 
+  get transferFeePercent(): BigDecimal {
+    let value = this.get("transferFeePercent");
+    return value!.toBigDecimal();
+  }
+
+  set transferFeePercent(value: BigDecimal) {
+    this.set("transferFeePercent", Value.fromBigDecimal(value));
+  }
+
   get gasFee(): BigInt {
     let value = this.get("gasFee");
     return value!.toBigInt();
@@ -1147,6 +1168,15 @@ export class AssetSentToUserLogEntry extends Entity {
 
   set gasFee(value: BigInt) {
     this.set("gasFee", Value.fromBigInt(value));
+  }
+
+  get gasFeePercent(): BigDecimal {
+    let value = this.get("gasFeePercent");
+    return value!.toBigDecimal();
+  }
+
+  set gasFeePercent(value: BigDecimal) {
+    this.set("gasFeePercent", Value.fromBigDecimal(value));
   }
 }
 
@@ -1161,8 +1191,14 @@ export class DailyAssetSentPerFromChainAndToken extends Entity {
     this.set("cumulativeTransferredAmount", Value.fromBigInt(BigInt.zero()));
     this.set("fromChainId", Value.fromBigInt(BigInt.zero()));
     this.set("cumulativeLpFee", Value.fromBigInt(BigInt.zero()));
+    this.set("averageLpFeePercent", Value.fromBigDecimal(BigDecimal.zero()));
     this.set("cumulativeTransferFee", Value.fromBigInt(BigInt.zero()));
+    this.set(
+      "averageTransferFeePercent",
+      Value.fromBigDecimal(BigDecimal.zero())
+    );
     this.set("cumulativeGasFee", Value.fromBigInt(BigInt.zero()));
+    this.set("averageGasFeePercent", Value.fromBigDecimal(BigDecimal.zero()));
     this.set("count", Value.fromBigInt(BigInt.zero()));
   }
 
@@ -1251,6 +1287,15 @@ export class DailyAssetSentPerFromChainAndToken extends Entity {
     this.set("cumulativeLpFee", Value.fromBigInt(value));
   }
 
+  get averageLpFeePercent(): BigDecimal {
+    let value = this.get("averageLpFeePercent");
+    return value!.toBigDecimal();
+  }
+
+  set averageLpFeePercent(value: BigDecimal) {
+    this.set("averageLpFeePercent", Value.fromBigDecimal(value));
+  }
+
   get cumulativeTransferFee(): BigInt {
     let value = this.get("cumulativeTransferFee");
     return value!.toBigInt();
@@ -1260,6 +1305,15 @@ export class DailyAssetSentPerFromChainAndToken extends Entity {
     this.set("cumulativeTransferFee", Value.fromBigInt(value));
   }
 
+  get averageTransferFeePercent(): BigDecimal {
+    let value = this.get("averageTransferFeePercent");
+    return value!.toBigDecimal();
+  }
+
+  set averageTransferFeePercent(value: BigDecimal) {
+    this.set("averageTransferFeePercent", Value.fromBigDecimal(value));
+  }
+
   get cumulativeGasFee(): BigInt {
     let value = this.get("cumulativeGasFee");
     return value!.toBigInt();
@@ -1267,6 +1321,15 @@ export class DailyAssetSentPerFromChainAndToken extends Entity {
 
   set cumulativeGasFee(value: BigInt) {
     this.set("cumulativeGasFee", Value.fromBigInt(value));
+  }
+
+  get averageGasFeePercent(): BigDecimal {
+    let value = this.get("averageGasFeePercent");
+    return value!.toBigDecimal();
+  }
+
+  set averageGasFeePercent(value: BigDecimal) {
+    this.set("averageGasFeePercent", Value.fromBigDecimal(value));
   }
 
   get count(): BigInt {
@@ -1291,8 +1354,14 @@ export class RollingAssetSentForLast24HoursPerChainAndToken extends Entity {
     this.set("depositHash", Value.fromBytes(Bytes.empty()));
     this.set("fromChainId", Value.fromBigInt(BigInt.zero()));
     this.set("cumulativeLpFee", Value.fromBigInt(BigInt.zero()));
+    this.set("averageLpFeePercent", Value.fromBigDecimal(BigDecimal.zero()));
     this.set("cumulativeTransferFee", Value.fromBigInt(BigInt.zero()));
+    this.set(
+      "averageTransferFeePercent",
+      Value.fromBigDecimal(BigDecimal.zero())
+    );
     this.set("cumulativeGasFee", Value.fromBigInt(BigInt.zero()));
+    this.set("averageGasFeePercent", Value.fromBigDecimal(BigDecimal.zero()));
     this.set("assetSentLogs", Value.fromStringArray(new Array(0)));
   }
 
@@ -1396,6 +1465,15 @@ export class RollingAssetSentForLast24HoursPerChainAndToken extends Entity {
     this.set("cumulativeLpFee", Value.fromBigInt(value));
   }
 
+  get averageLpFeePercent(): BigDecimal {
+    let value = this.get("averageLpFeePercent");
+    return value!.toBigDecimal();
+  }
+
+  set averageLpFeePercent(value: BigDecimal) {
+    this.set("averageLpFeePercent", Value.fromBigDecimal(value));
+  }
+
   get cumulativeTransferFee(): BigInt {
     let value = this.get("cumulativeTransferFee");
     return value!.toBigInt();
@@ -1405,6 +1483,15 @@ export class RollingAssetSentForLast24HoursPerChainAndToken extends Entity {
     this.set("cumulativeTransferFee", Value.fromBigInt(value));
   }
 
+  get averageTransferFeePercent(): BigDecimal {
+    let value = this.get("averageTransferFeePercent");
+    return value!.toBigDecimal();
+  }
+
+  set averageTransferFeePercent(value: BigDecimal) {
+    this.set("averageTransferFeePercent", Value.fromBigDecimal(value));
+  }
+
   get cumulativeGasFee(): BigInt {
     let value = this.get("cumulativeGasFee");
     return value!.toBigInt();
@@ -1412,6 +1499,15 @@ export class RollingAssetSentForLast24HoursPerChainAndToken extends Entity {
 
   set cumulativeGasFee(value: BigInt) {
     this.set("cumulativeGasFee", Value.fromBigInt(value));
+  }
+
+  get averageGasFeePercent(): BigDecimal {
+    let value = this.get("averageGasFeePercent");
+    return value!.toBigDecimal();
+  }
+
+  set averageGasFeePercent(value: BigDecimal) {
+    this.set("averageGasFeePercent", Value.fromBigDecimal(value));
   }
 
   get assetSentLogs(): Array<string> {
