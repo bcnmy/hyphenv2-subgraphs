@@ -135,6 +135,8 @@ export function handleFeeAdded(event: FeeAdded): void {
 
   let oldLpLogs = rollingApyFor24Hour.lpLogs;
 
+  let firstTokenPriceInLPSharesFallback = BigInt.fromI32(0);
+  let isFirstTokenPriceInLPSharesFallbackActive = false;
   while (true) {
     if (oldLpLogs.length > 0) {
       let oldLpLog = TokenPriceInLPSharesLog.load(oldLpLogs[0]);
@@ -142,6 +144,11 @@ export function handleFeeAdded(event: FeeAdded): void {
       if (tokenPriceInLPSharesLog.timestamp.minus(oldLpLog.timestamp).gt(BigInt.fromI32(86400))) {
         log.info("Found old log, removing", []);
         oldLpLogs.shift();
+        //If this was the last remaining option for firstTokenPriceInLPShares, then activate the fallback
+        if (oldLpLogs.length === 0) {
+          firstTokenPriceInLPSharesFallback = oldLpLog.tokenPriceInLPShares;
+          isFirstTokenPriceInLPSharesFallbackActive = true;
+        }
       } else {
         log.info("Found first okay log, keeping firstTokenPriceInLPShares:", [oldLpLog.tokenPriceInLPShares.toString()]);
         rollingApyFor24Hour.firstTokenPriceInLPShares = oldLpLog.tokenPriceInLPShares;
@@ -150,7 +157,11 @@ export function handleFeeAdded(event: FeeAdded): void {
         break;
       }
     } else {
-      rollingApyFor24Hour.firstTokenPriceInLPShares = currentTokenPriceInLPShares;
+      if (isFirstTokenPriceInLPSharesFallbackActive) {
+        rollingApyFor24Hour.firstTokenPriceInLPShares = firstTokenPriceInLPSharesFallback;
+      } else {
+        rollingApyFor24Hour.firstTokenPriceInLPShares = currentTokenPriceInLPShares;
+      }
       log.info("LP LOG: First is equal to last {}", [rollingApyFor24Hour.firstLog]);
       break;
     }
