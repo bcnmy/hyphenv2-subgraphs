@@ -33,6 +33,7 @@ export function updateSuppliedLiquidity(txId: string, tokenAddress: Address, tim
     suppliedLiquidityLogEntry = new SuppliedLiquidityLogEntry(logKey);
     suppliedLiquidityLogEntry.tokenAddress = tokenAddress;
     suppliedLiquidityLogEntry.timestamp = timestamp;
+    suppliedLiquidityLogEntry.suppliedLiquidity = currentSuppliedLiquidity;
   } else {
     suppliedLiquidityLogEntry.save();
     return;

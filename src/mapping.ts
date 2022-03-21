@@ -464,6 +464,8 @@ export function updateIncentivePoolBalance(txId: string, tokenAddress: Address, 
     incentivePoolBalanceLogEntry = new IncentivePoolBalanceLogEntry(logKey);
     incentivePoolBalanceLogEntry.tokenAddress = tokenAddress;
     incentivePoolBalanceLogEntry.timestamp = timestamp;
+    incentivePoolBalanceLogEntry.poolBalance = currentIncentivePoolBalance;
+    log.info("Created new incentivePoolBalance Log Entry", []);
   } else {
     incentivePoolBalanceLogEntry.poolBalance = currentIncentivePoolBalance;
     incentivePoolBalanceLogEntry.save();
