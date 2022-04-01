@@ -74,6 +74,18 @@ type RollingDepositVolumeForLast24HourPerChainAndToken @entity {
   tokenAddress: Bytes!
   toChainID: BigInt!
   count: BigInt!
+  firstDeposit: String!
+  lastDeposit: String!
+}
+
+type HourlyDepositVolumePerChainAndToken @entity {
+  id: ID!
+  timestamp: BigInt!
+  cumulativeRewardAmount: BigInt!
+  cumulativeAmount: BigInt!
+  tokenAddress: Bytes!
+  toChainID: BigInt!
+  count: BigInt!
 }
 
 type DailyDepositVolume @entity {

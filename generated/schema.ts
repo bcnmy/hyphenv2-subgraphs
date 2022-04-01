@@ -373,6 +373,8 @@ export class RollingDepositVolumeForLast24HourPerChainAndToken extends Entity {
     this.set("tokenAddress", Value.fromBytes(Bytes.empty()));
     this.set("toChainID", Value.fromBigInt(BigInt.zero()));
     this.set("count", Value.fromBigInt(BigInt.zero()));
+    this.set("firstDeposit", Value.fromString(""));
+    this.set("lastDeposit", Value.fromString(""));
   }
 
   save(): void {
@@ -437,6 +439,123 @@ export class RollingDepositVolumeForLast24HourPerChainAndToken extends Entity {
 
   set deposits(value: Array<string>) {
     this.set("deposits", Value.fromStringArray(value));
+  }
+
+  get tokenAddress(): Bytes {
+    let value = this.get("tokenAddress");
+    return value!.toBytes();
+  }
+
+  set tokenAddress(value: Bytes) {
+    this.set("tokenAddress", Value.fromBytes(value));
+  }
+
+  get toChainID(): BigInt {
+    let value = this.get("toChainID");
+    return value!.toBigInt();
+  }
+
+  set toChainID(value: BigInt) {
+    this.set("toChainID", Value.fromBigInt(value));
+  }
+
+  get count(): BigInt {
+    let value = this.get("count");
+    return value!.toBigInt();
+  }
+
+  set count(value: BigInt) {
+    this.set("count", Value.fromBigInt(value));
+  }
+
+  get firstDeposit(): string {
+    let value = this.get("firstDeposit");
+    return value!.toString();
+  }
+
+  set firstDeposit(value: string) {
+    this.set("firstDeposit", Value.fromString(value));
+  }
+
+  get lastDeposit(): string {
+    let value = this.get("lastDeposit");
+    return value!.toString();
+  }
+
+  set lastDeposit(value: string) {
+    this.set("lastDeposit", Value.fromString(value));
+  }
+}
+
+export class HourlyDepositVolumePerChainAndToken extends Entity {
+  constructor(id: string) {
+    super();
+    this.set("id", Value.fromString(id));
+
+    this.set("timestamp", Value.fromBigInt(BigInt.zero()));
+    this.set("cumulativeRewardAmount", Value.fromBigInt(BigInt.zero()));
+    this.set("cumulativeAmount", Value.fromBigInt(BigInt.zero()));
+    this.set("tokenAddress", Value.fromBytes(Bytes.empty()));
+    this.set("toChainID", Value.fromBigInt(BigInt.zero()));
+    this.set("count", Value.fromBigInt(BigInt.zero()));
+  }
+
+  save(): void {
+    let id = this.get("id");
+    assert(
+      id != null,
+      "Cannot save HourlyDepositVolumePerChainAndToken entity without an ID"
+    );
+    if (id) {
+      assert(
+        id.kind == ValueKind.STRING,
+        "Cannot save HourlyDepositVolumePerChainAndToken entity with non-string ID. " +
+          'Considering using .toHex() to convert the "id" to a string.'
+      );
+      store.set("HourlyDepositVolumePerChainAndToken", id.toString(), this);
+    }
+  }
+
+  static load(id: string): HourlyDepositVolumePerChainAndToken | null {
+    return changetype<HourlyDepositVolumePerChainAndToken | null>(
+      store.get("HourlyDepositVolumePerChainAndToken", id)
+    );
+  }
+
+  get id(): string {
+    let value = this.get("id");
+    return value!.toString();
+  }
+
+  set id(value: string) {
+    this.set("id", Value.fromString(value));
+  }
+
+  get timestamp(): BigInt {
+    let value = this.get("timestamp");
+    return value!.toBigInt();
+  }
+
+  set timestamp(value: BigInt) {
+    this.set("timestamp", Value.fromBigInt(value));
+  }
+
+  get cumulativeRewardAmount(): BigInt {
+    let value = this.get("cumulativeRewardAmount");
+    return value!.toBigInt();
+  }
+
+  set cumulativeRewardAmount(value: BigInt) {
+    this.set("cumulativeRewardAmount", Value.fromBigInt(value));
+  }
+
+  get cumulativeAmount(): BigInt {
+    let value = this.get("cumulativeAmount");
+    return value!.toBigInt();
+  }
+
+  set cumulativeAmount(value: BigInt) {
+    this.set("cumulativeAmount", Value.fromBigInt(value));
   }
 
   get tokenAddress(): Bytes {
