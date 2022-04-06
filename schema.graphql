@@ -38,8 +38,20 @@ type Deposit @entity {
   receiver: Bytes!
   toChainID: BigInt!
   rewardAmount: BigInt!
+  rewardAmountPercent: BigDecimal!
   amount: BigInt!
   tag: String!
+}
+
+type HourlyDeposit @entity {
+  id: ID!
+  tokenAddress: Bytes!
+  timestamp: BigInt!
+  toChainID: BigInt!
+  cumulativeRewardAmount: BigInt!
+  averageRewardAmountPercent: BigDecimal!
+  cumulativeAmount: BigInt!
+  count: BigInt!
 }
 
 type DepositVolumeCumulative @entity {
@@ -160,6 +172,24 @@ type AssetSentToUserLogEntry @entity {
   transferFeePercent: BigDecimal!
   gasFee: BigInt!
   gasFeePercent: BigDecimal!
+}
+
+type HourlyAssetSent @entity {
+  id: ID!
+  count: BigInt!
+  timestamp: BigInt!
+  tokenAddress: Bytes!
+  fromChainId: BigInt!
+  cumulativeAmount: BigInt!
+  cumulativeTransferredAmount: BigInt!
+
+  cumulativeLpFee: BigInt!
+  cumulativeTransferFee: BigInt!
+  cumulativeGasFee: BigInt!
+
+  averageLpFeePercent: BigDecimal!
+  averageTransferFeePercent: BigDecimal!
+  averageGasFeePercent: BigDecimal!
 }
 
 type DailyAssetSentPerFromChainAndToken @entity {

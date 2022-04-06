@@ -20,15 +20,6 @@ import {
   Unpaused,
 } from "../generated/LiquidityPool/LiquidityPool";
 
-// import { LiquidityPool } from "../generated/LiquidityPool/LiquidityPool";
-import {
-  LiquidityAdded,
-  LiquidityRemoved,
-  FeeAdded,
-  LiquidityProviders,
-  CurrentLiquidityChanged,
-} from "../generated/LiquidityProviders/LiquidityProviders";
-
 import {
   TokenPriceInLPSharesLog,
   RollingApyFor24Hour,
@@ -54,7 +45,9 @@ import {
   RollingIncentivePoolBalanceForLast24Hour,
   DailyAssetSentPerFromChainAndToken,
   RollingAssetSentForLast24HoursPerChainAndToken,
-  HourlyDepositVolumePerChainAndToken
+  HourlyDepositVolumePerChainAndToken,
+  HourlyDeposit,
+  HourlyAssetSent
 } from "../generated/schema";
 
 export function updateAvailableLiquidity(
@@ -180,6 +173,57 @@ export function handleAssetSent(event: AssetSent): void {
     .times(BigInt.fromI32(100).toBigDecimal());
 
   assetSent.save();
+
+  const epochModSecondsInAnHour = assetSent.timestamp.mod(BigInt.fromI32(3600));
+  const hourEpoch = assetSent.timestamp.minus(epochModSecondsInAnHour);
+
+  let hourlyAssetSent = HourlyAssetSent.load(`${hourEpoch}-${assetSent.tokenAddress.toHex()}-${assetSent.fromChainId}`);
+  if (!hourlyAssetSent) {
+    hourlyAssetSent = new HourlyAssetSent(`${hourEpoch}-${assetSent.tokenAddress.toHex()}-${assetSent.fromChainId}`);
+
+    hourlyAssetSent.timestamp = hourEpoch;
+    hourlyAssetSent.fromChainId = assetSent.fromChainId;
+    hourlyAssetSent.tokenAddress = assetSent.tokenAddress;
+
+    hourlyAssetSent.count = BigInt.fromI32(0);
+
+    hourlyAssetSent.cumulativeTransferredAmount = BigInt.fromI32(0);
+    hourlyAssetSent.cumulativeAmount = BigInt.fromI32(0);
+
+    hourlyAssetSent.cumulativeGasFee = BigInt.fromI32(0);
+    hourlyAssetSent.cumulativeLpFee = BigInt.fromI32(0);
+    hourlyAssetSent.cumulativeTransferFee = BigInt.fromI32(0);
+
+    hourlyAssetSent.averageGasFeePercent = BigInt.fromI32(0).toBigDecimal();
+    hourlyAssetSent.averageLpFeePercent = BigInt.fromI32(0).toBigDecimal();
+    hourlyAssetSent.averageTransferFeePercent = BigInt.fromI32(0).toBigDecimal();
+  }
+
+  hourlyAssetSent.cumulativeAmount = hourlyAssetSent.cumulativeAmount.plus(assetSent.amount);
+  hourlyAssetSent.cumulativeTransferredAmount = hourlyAssetSent.cumulativeTransferredAmount.plus(assetSent.transferredAmount);
+
+  hourlyAssetSent.cumulativeGasFee = hourlyAssetSent.cumulativeGasFee.plus(assetSent.gasFee);
+  hourlyAssetSent.cumulativeLpFee = hourlyAssetSent.cumulativeLpFee.plus(assetSent.lpFee);
+  hourlyAssetSent.cumulativeTransferFee = hourlyAssetSent.cumulativeTransferFee.plus(assetSent.transferFee);
+
+  hourlyAssetSent.averageGasFeePercent = hourlyAssetSent.averageGasFeePercent
+    .times(hourlyAssetSent.count.toBigDecimal())
+    .plus(assetSent.gasFeePercent)
+    .div(hourlyAssetSent.count.plus(BigInt.fromI32(1)).toBigDecimal())
+
+  hourlyAssetSent.averageLpFeePercent = hourlyAssetSent.averageLpFeePercent
+    .times(hourlyAssetSent.count.toBigDecimal())
+    .plus(assetSent.lpFeePercent)
+    .div(hourlyAssetSent.count.plus(BigInt.fromI32(1)).toBigDecimal());
+
+  hourlyAssetSent.averageTransferFeePercent = hourlyAssetSent.averageTransferFeePercent
+    .times(hourlyAssetSent.count.toBigDecimal())
+    .plus(assetSent.transferFeePercent)
+    .div(hourlyAssetSent.count.plus(BigInt.fromI32(1)).toBigDecimal());
+
+  hourlyAssetSent.count = hourlyAssetSent.count.plus(BigInt.fromI32(1));
+
+  hourlyAssetSent.save()
 
   const epochModSecondsInADay = assetSent.timestamp.mod(BigInt.fromI32(86400));
   const dayEpoch = assetSent.timestamp.minus(epochModSecondsInADay);
@@ -449,8 +493,36 @@ export function handleDeposit(event: Deposit): void {
   deposit.toChainID = event.params.toChainId;
   deposit.rewardAmount = event.params.reward;
   deposit.amount = event.params.amount;
+  deposit.rewardAmountPercent = deposit.rewardAmount.divDecimal(deposit.amount.toBigDecimal()).times(BigInt.fromI32(100).toBigDecimal());
   deposit.tag = event.params.tag;
   deposit.timestamp = event.block.timestamp;
+
+  const epochModSecondsInAnHour = deposit.timestamp.mod(BigInt.fromI32(3600));
+  const hourEpoch = deposit.timestamp.minus(epochModSecondsInAnHour);
+
+  let hourlyDeposit = HourlyDeposit.load(`${hourEpoch}-${deposit.tokenAddress.toHex()}-${deposit.toChainID}}`);
+  if (!hourlyDeposit) {
+    hourlyDeposit = new HourlyDeposit(`${hourEpoch}-${deposit.tokenAddress.toHex()}-${deposit.toChainID}}`);
+    hourlyDeposit.timestamp = hourEpoch;
+    hourlyDeposit.toChainID = deposit.toChainID;
+    hourlyDeposit.tokenAddress = deposit.tokenAddress;
+
+    hourlyDeposit.count = BigInt.fromI32(0);
+    hourlyDeposit.averageRewardAmountPercent = BigInt.fromI32(0).toBigDecimal();
+    hourlyDeposit.cumulativeAmount = BigInt.fromI32(0);
+    hourlyDeposit.cumulativeRewardAmount = BigInt.fromI32(0)
+  }
+
+  hourlyDeposit.cumulativeAmount = hourlyDeposit.cumulativeAmount.plus(deposit.amount);
+  hourlyDeposit.cumulativeRewardAmount = hourlyDeposit.cumulativeRewardAmount.plus(deposit.rewardAmount);
+  hourlyDeposit.averageRewardAmountPercent = hourlyDeposit.averageRewardAmountPercent
+    .times(hourlyDeposit.count.toBigDecimal())
+    .plus(deposit.rewardAmountPercent)
+    .div(hourlyDeposit.count.plus(BigInt.fromI32(1)).toBigDecimal());
+
+  hourlyDeposit.count = hourlyDeposit.count.plus(BigInt.fromI32(1));
+
+  hourlyDeposit.save()
 
   log.info("Sender:", [deposit.sender.toHexString()]);
   log.info("Token Address:", [deposit.tokenAddress.toHexString()]);
@@ -639,9 +711,6 @@ export function handleDeposit(event: Deposit): void {
   deposit.save();
   todayDepositVolume.save();
   todayDepositVolumePerChainAndToken.save();
-
-  const epochModSecondsInAnHour = deposit.timestamp.mod(BigInt.fromI32(3600));
-  const hourEpoch = deposit.timestamp.minus(epochModSecondsInAnHour);
 
   let hourlyDepositVolumePerChainAndToken = HourlyDepositVolumePerChainAndToken.load(`${hourEpoch}-${deposit.tokenAddress.toHex()}-${deposit.toChainID}`);
   if (!hourlyDepositVolumePerChainAndToken) {

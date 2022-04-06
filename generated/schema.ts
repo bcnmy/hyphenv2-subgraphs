@@ -22,6 +22,7 @@ export class Deposit extends Entity {
     this.set("receiver", Value.fromBytes(Bytes.empty()));
     this.set("toChainID", Value.fromBigInt(BigInt.zero()));
     this.set("rewardAmount", Value.fromBigInt(BigInt.zero()));
+    this.set("rewardAmountPercent", Value.fromBigDecimal(BigDecimal.zero()));
     this.set("amount", Value.fromBigInt(BigInt.zero()));
     this.set("tag", Value.fromString(""));
   }
@@ -106,6 +107,15 @@ export class Deposit extends Entity {
     this.set("rewardAmount", Value.fromBigInt(value));
   }
 
+  get rewardAmountPercent(): BigDecimal {
+    let value = this.get("rewardAmountPercent");
+    return value!.toBigDecimal();
+  }
+
+  set rewardAmountPercent(value: BigDecimal) {
+    this.set("rewardAmountPercent", Value.fromBigDecimal(value));
+  }
+
   get amount(): BigInt {
     let value = this.get("amount");
     return value!.toBigInt();
@@ -122,6 +132,113 @@ export class Deposit extends Entity {
 
   set tag(value: string) {
     this.set("tag", Value.fromString(value));
+  }
+}
+
+export class HourlyDeposit extends Entity {
+  constructor(id: string) {
+    super();
+    this.set("id", Value.fromString(id));
+
+    this.set("tokenAddress", Value.fromBytes(Bytes.empty()));
+    this.set("timestamp", Value.fromBigInt(BigInt.zero()));
+    this.set("toChainID", Value.fromBigInt(BigInt.zero()));
+    this.set("cumulativeRewardAmount", Value.fromBigInt(BigInt.zero()));
+    this.set(
+      "averageRewardAmountPercent",
+      Value.fromBigDecimal(BigDecimal.zero())
+    );
+    this.set("cumulativeAmount", Value.fromBigInt(BigInt.zero()));
+    this.set("count", Value.fromBigInt(BigInt.zero()));
+  }
+
+  save(): void {
+    let id = this.get("id");
+    assert(id != null, "Cannot save HourlyDeposit entity without an ID");
+    if (id) {
+      assert(
+        id.kind == ValueKind.STRING,
+        "Cannot save HourlyDeposit entity with non-string ID. " +
+          'Considering using .toHex() to convert the "id" to a string.'
+      );
+      store.set("HourlyDeposit", id.toString(), this);
+    }
+  }
+
+  static load(id: string): HourlyDeposit | null {
+    return changetype<HourlyDeposit | null>(store.get("HourlyDeposit", id));
+  }
+
+  get id(): string {
+    let value = this.get("id");
+    return value!.toString();
+  }
+
+  set id(value: string) {
+    this.set("id", Value.fromString(value));
+  }
+
+  get tokenAddress(): Bytes {
+    let value = this.get("tokenAddress");
+    return value!.toBytes();
+  }
+
+  set tokenAddress(value: Bytes) {
+    this.set("tokenAddress", Value.fromBytes(value));
+  }
+
+  get timestamp(): BigInt {
+    let value = this.get("timestamp");
+    return value!.toBigInt();
+  }
+
+  set timestamp(value: BigInt) {
+    this.set("timestamp", Value.fromBigInt(value));
+  }
+
+  get toChainID(): BigInt {
+    let value = this.get("toChainID");
+    return value!.toBigInt();
+  }
+
+  set toChainID(value: BigInt) {
+    this.set("toChainID", Value.fromBigInt(value));
+  }
+
+  get cumulativeRewardAmount(): BigInt {
+    let value = this.get("cumulativeRewardAmount");
+    return value!.toBigInt();
+  }
+
+  set cumulativeRewardAmount(value: BigInt) {
+    this.set("cumulativeRewardAmount", Value.fromBigInt(value));
+  }
+
+  get averageRewardAmountPercent(): BigDecimal {
+    let value = this.get("averageRewardAmountPercent");
+    return value!.toBigDecimal();
+  }
+
+  set averageRewardAmountPercent(value: BigDecimal) {
+    this.set("averageRewardAmountPercent", Value.fromBigDecimal(value));
+  }
+
+  get cumulativeAmount(): BigInt {
+    let value = this.get("cumulativeAmount");
+    return value!.toBigInt();
+  }
+
+  set cumulativeAmount(value: BigInt) {
+    this.set("cumulativeAmount", Value.fromBigInt(value));
+  }
+
+  get count(): BigInt {
+    let value = this.get("count");
+    return value!.toBigInt();
+  }
+
+  set count(value: BigInt) {
+    this.set("count", Value.fromBigInt(value));
   }
 }
 
@@ -1296,6 +1413,163 @@ export class AssetSentToUserLogEntry extends Entity {
 
   set gasFeePercent(value: BigDecimal) {
     this.set("gasFeePercent", Value.fromBigDecimal(value));
+  }
+}
+
+export class HourlyAssetSent extends Entity {
+  constructor(id: string) {
+    super();
+    this.set("id", Value.fromString(id));
+
+    this.set("count", Value.fromBigInt(BigInt.zero()));
+    this.set("timestamp", Value.fromBigInt(BigInt.zero()));
+    this.set("tokenAddress", Value.fromBytes(Bytes.empty()));
+    this.set("fromChainId", Value.fromBigInt(BigInt.zero()));
+    this.set("cumulativeAmount", Value.fromBigInt(BigInt.zero()));
+    this.set("cumulativeTransferredAmount", Value.fromBigInt(BigInt.zero()));
+    this.set("cumulativeLpFee", Value.fromBigInt(BigInt.zero()));
+    this.set("cumulativeTransferFee", Value.fromBigInt(BigInt.zero()));
+    this.set("cumulativeGasFee", Value.fromBigInt(BigInt.zero()));
+    this.set("averageLpFeePercent", Value.fromBigDecimal(BigDecimal.zero()));
+    this.set(
+      "averageTransferFeePercent",
+      Value.fromBigDecimal(BigDecimal.zero())
+    );
+    this.set("averageGasFeePercent", Value.fromBigDecimal(BigDecimal.zero()));
+  }
+
+  save(): void {
+    let id = this.get("id");
+    assert(id != null, "Cannot save HourlyAssetSent entity without an ID");
+    if (id) {
+      assert(
+        id.kind == ValueKind.STRING,
+        "Cannot save HourlyAssetSent entity with non-string ID. " +
+          'Considering using .toHex() to convert the "id" to a string.'
+      );
+      store.set("HourlyAssetSent", id.toString(), this);
+    }
+  }
+
+  static load(id: string): HourlyAssetSent | null {
+    return changetype<HourlyAssetSent | null>(store.get("HourlyAssetSent", id));
+  }
+
+  get id(): string {
+    let value = this.get("id");
+    return value!.toString();
+  }
+
+  set id(value: string) {
+    this.set("id", Value.fromString(value));
+  }
+
+  get count(): BigInt {
+    let value = this.get("count");
+    return value!.toBigInt();
+  }
+
+  set count(value: BigInt) {
+    this.set("count", Value.fromBigInt(value));
+  }
+
+  get timestamp(): BigInt {
+    let value = this.get("timestamp");
+    return value!.toBigInt();
+  }
+
+  set timestamp(value: BigInt) {
+    this.set("timestamp", Value.fromBigInt(value));
+  }
+
+  get tokenAddress(): Bytes {
+    let value = this.get("tokenAddress");
+    return value!.toBytes();
+  }
+
+  set tokenAddress(value: Bytes) {
+    this.set("tokenAddress", Value.fromBytes(value));
+  }
+
+  get fromChainId(): BigInt {
+    let value = this.get("fromChainId");
+    return value!.toBigInt();
+  }
+
+  set fromChainId(value: BigInt) {
+    this.set("fromChainId", Value.fromBigInt(value));
+  }
+
+  get cumulativeAmount(): BigInt {
+    let value = this.get("cumulativeAmount");
+    return value!.toBigInt();
+  }
+
+  set cumulativeAmount(value: BigInt) {
+    this.set("cumulativeAmount", Value.fromBigInt(value));
+  }
+
+  get cumulativeTransferredAmount(): BigInt {
+    let value = this.get("cumulativeTransferredAmount");
+    return value!.toBigInt();
+  }
+
+  set cumulativeTransferredAmount(value: BigInt) {
+    this.set("cumulativeTransferredAmount", Value.fromBigInt(value));
+  }
+
+  get cumulativeLpFee(): BigInt {
+    let value = this.get("cumulativeLpFee");
+    return value!.toBigInt();
+  }
+
+  set cumulativeLpFee(value: BigInt) {
+    this.set("cumulativeLpFee", Value.fromBigInt(value));
+  }
+
+  get cumulativeTransferFee(): BigInt {
+    let value = this.get("cumulativeTransferFee");
+    return value!.toBigInt();
+  }
+
+  set cumulativeTransferFee(value: BigInt) {
+    this.set("cumulativeTransferFee", Value.fromBigInt(value));
+  }
+
+  get cumulativeGasFee(): BigInt {
+    let value = this.get("cumulativeGasFee");
+    return value!.toBigInt();
+  }
+
+  set cumulativeGasFee(value: BigInt) {
+    this.set("cumulativeGasFee", Value.fromBigInt(value));
+  }
+
+  get averageLpFeePercent(): BigDecimal {
+    let value = this.get("averageLpFeePercent");
+    return value!.toBigDecimal();
+  }
+
+  set averageLpFeePercent(value: BigDecimal) {
+    this.set("averageLpFeePercent", Value.fromBigDecimal(value));
+  }
+
+  get averageTransferFeePercent(): BigDecimal {
+    let value = this.get("averageTransferFeePercent");
+    return value!.toBigDecimal();
+  }
+
+  set averageTransferFeePercent(value: BigDecimal) {
+    this.set("averageTransferFeePercent", Value.fromBigDecimal(value));
+  }
+
+  get averageGasFeePercent(): BigDecimal {
+    let value = this.get("averageGasFeePercent");
+    return value!.toBigDecimal();
+  }
+
+  set averageGasFeePercent(value: BigDecimal) {
+    this.set("averageGasFeePercent", Value.fromBigDecimal(value));
   }
 }
 
