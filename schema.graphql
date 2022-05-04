@@ -1,42 +1,34 @@
 # lpFee is equal to transferFeeAmount when transferFeePercent < equilibriumFee
 # when transferFeePercent > equilibriumFee, lpFee is capped, and exceeding portion of
 # transferFeeAmount goes to Arbitragers in the form of Incentive Pool
-type FeeDetailLogEntry @entity {
-  id: ID!
-  lpFee: BigInt!
-  transferFee: BigInt!
-  gasFee: BigInt!
-  timestamp: BigInt!
-  rollingWindow: RollingFeeDetailsLogsForLast24Hour
-  dailyWindow: DailyFeeDetailsLog!
-}
+# type FeeCumulative @entity {
+#   id: ID!
+#   lpFee: BigInt!
+#   transferFee: BigInt!
+#   gasFee: BigInt!
+#   count: BigInt!
+#   tokenAddress: Bytes!
+# }
 
-type FeeCumulative @entity {
-  id: ID!
-  lpFee: BigInt!
-  transferFee: BigInt!
-  gasFee: BigInt!
-  count: BigInt!
-}
+# type RollingFeeDetailsLogsForLast24Hour @entity {
+#   id: ID!
+#   cumulativeLpFee: BigInt!
+#   cumulativeTransferFee: BigInt!
+#   cumulativeGasFee: BigInt!
+#   logs: [String!]!
+#   count: BigInt!
+#   tokenAddress: Bytes!
+# }
 
-type RollingFeeDetailsLogsForLast24Hour @entity {
-  id: ID!
-  cumulativeLpFee: BigInt!
-  cumulativeTransferFee: BigInt!
-  cumulativeGasFee: BigInt!
-  logs: [FeeDetailLogEntry!] @derivedFrom(field: "rollingWindow")
-  count: BigInt!
-}
-
-type DailyFeeDetailsLog @entity {
-  id: ID!
-  cumulativeLpFee: BigInt!
-  cumulativeTransferFee: BigInt!
-  cumulativeGasFee: BigInt!
-  logs: [FeeDetailLogEntry!] @derivedFrom(field: "dailyWindow")
-  count: BigInt!
-  timestamp: BigInt!
-}
+# type DailyFeeDetailsLog @entity {
+#   id: ID!
+#   cumulativeLpFee: BigInt!
+#   cumulativeTransferFee: BigInt!
+#   cumulativeGasFee: BigInt!
+#   count: BigInt!
+#   timestamp: BigInt!
+#   tokenAddress: Bytes!
+# }
 
 type Deposit @entity {
   id: ID!
@@ -46,12 +38,20 @@ type Deposit @entity {
   receiver: Bytes!
   toChainID: BigInt!
   rewardAmount: BigInt!
+  rewardAmountPercent: BigDecimal!
   amount: BigInt!
   tag: String!
-  rollingWindow: RollingDepositVolumeForLast24Hour
-  rollingWindowPerChainAndToken: RollingDepositVolumeForLast24HourPerChainAndToken
-  dailyWindow: DailyDepositVolume!
-  dailyWindowPerChainAndToken: DailyDepositVolumePerChainAndToken!
+}
+
+type HourlyDeposit @entity {
+  id: ID!
+  tokenAddress: Bytes!
+  timestamp: BigInt!
+  toChainID: BigInt!
+  cumulativeRewardAmount: BigInt!
+  averageRewardAmountPercent: BigDecimal!
+  cumulativeAmount: BigInt!
+  count: BigInt!
 }
 
 type DepositVolumeCumulative @entity {
@@ -74,7 +74,7 @@ type RollingDepositVolumeForLast24Hour @entity {
   id: ID!
   cumulativeRewardAmount: BigInt!
   cumulativeAmount: BigInt!
-  deposits: [Deposit!] @derivedFrom(field: "rollingWindow")
+  deposits: [String!]!
   count: BigInt!
 }
 
@@ -82,7 +82,19 @@ type RollingDepositVolumeForLast24HourPerChainAndToken @entity {
   id: ID!
   cumulativeRewardAmount: BigInt!
   cumulativeAmount: BigInt!
-  deposits: [Deposit!] @derivedFrom(field: "rollingWindowPerChainAndToken")
+  deposits: [String!]!
+  tokenAddress: Bytes!
+  toChainID: BigInt!
+  count: BigInt!
+  firstDeposit: String!
+  lastDeposit: String!
+}
+
+type HourlyDepositVolumePerChainAndToken @entity {
+  id: ID!
+  timestamp: BigInt!
+  cumulativeRewardAmount: BigInt!
+  cumulativeAmount: BigInt!
   tokenAddress: Bytes!
   toChainID: BigInt!
   count: BigInt!
@@ -92,7 +104,7 @@ type DailyDepositVolume @entity {
   id: ID!
   cumulativeRewardAmount: BigInt!
   cumulativeAmount: BigInt!
-  deposits: [Deposit!]! @derivedFrom(field: "dailyWindow")
+  deposits: [String!]!
   count: BigInt!
   timestamp: BigInt!
 }
@@ -101,7 +113,7 @@ type DailyDepositVolumePerChainAndToken @entity {
   id: ID!
   cumulativeRewardAmount: BigInt!
   cumulativeAmount: BigInt!
-  deposits: [Deposit!]! @derivedFrom(field: "dailyWindowPerChainAndToken")
+  deposits: [String!]!
   toChainID: BigInt!
   tokenAddress: Bytes!
   count: BigInt!
@@ -132,7 +144,6 @@ type TokenPriceInLPSharesLog @entity {
   timestamp: BigInt!
   tokenPriceInLPShares: BigInt!
   tokenAddress: Bytes!
-  rollingApyWindow: RollingApyFor24Hour
 }
 
 type RollingApyFor24Hour @entity {
@@ -141,7 +152,9 @@ type RollingApyFor24Hour @entity {
   lastTokenPriceInLPShares: BigInt!
   apy: BigDecimal!
   tokenAddress: Bytes!
-  lpLogs: [TokenPriceInLPSharesLog!] @derivedFrom(field: "rollingApyWindow")
+  lpLogs: [String!]!
+  firstLog: String!
+  lastLog: String!
 }
 
 type AssetSentToUserLogEntry @entity {
@@ -153,6 +166,63 @@ type AssetSentToUserLogEntry @entity {
   receiver: Bytes!
   depositHash: Bytes!
   fromChainId: BigInt!
+  lpFee: BigInt!
+  lpFeePercent: BigDecimal!
+  transferFee: BigInt!
+  transferFeePercent: BigDecimal!
+  gasFee: BigInt!
+  gasFeePercent: BigDecimal!
+}
+
+type HourlyAssetSent @entity {
+  id: ID!
+  count: BigInt!
+  timestamp: BigInt!
+  tokenAddress: Bytes!
+  fromChainId: BigInt!
+  cumulativeAmount: BigInt!
+  cumulativeTransferredAmount: BigInt!
+
+  cumulativeLpFee: BigInt!
+  cumulativeTransferFee: BigInt!
+  cumulativeGasFee: BigInt!
+
+  averageLpFeePercent: BigDecimal!
+  averageTransferFeePercent: BigDecimal!
+  averageGasFeePercent: BigDecimal!
+}
+
+type DailyAssetSentPerFromChainAndToken @entity {
+  id: ID!
+  timestamp: BigInt!
+  tokenAddress: Bytes!
+  cumulativeAmount: BigInt!
+  cumulativeTransferredAmount: BigInt!
+  fromChainId: BigInt!
+  cumulativeLpFee: BigInt!
+  averageLpFeePercent: BigDecimal!
+  cumulativeTransferFee: BigInt!
+  averageTransferFeePercent: BigDecimal!
+  cumulativeGasFee: BigInt!
+  averageGasFeePercent: BigDecimal!
+  count: BigInt!
+}
+
+type RollingAssetSentForLast24HoursPerChainAndToken @entity {
+  id: ID!
+  count: BigInt!
+  tokenAddress: Bytes!
+  cumulativeAmount: BigInt!
+  cumulativeTransferredAmount: BigInt!
+  depositHash: Bytes!
+  fromChainId: BigInt!
+  cumulativeLpFee: BigInt!
+  averageLpFeePercent: BigDecimal!
+  cumulativeTransferFee: BigInt!
+  averageTransferFeePercent: BigDecimal!
+  cumulativeGasFee: BigInt!
+  averageGasFeePercent: BigDecimal!
+  assetSentLogs: [String!]!
 }
 
 type SuppliedLiquidityLogEntry @entity {
@@ -160,7 +230,6 @@ type SuppliedLiquidityLogEntry @entity {
   timestamp: BigInt!
   suppliedLiquidity: BigInt!
   tokenAddress: Bytes!
-  suppliedLiquidityRollingWindow: RollingSuppliedLiquidityForLast24Hour
 }
 
 type HourlySuppliedLiquidity @entity {
@@ -177,9 +246,7 @@ type RollingSuppliedLiquidityForLast24Hour @entity {
   suppliedLiquidity: BigInt!
   tokenAddress: Bytes!
   count: BigInt!
-  logs: [SuppliedLiquidityLogEntry!] @derivedFrom(field: "suppliedLiquidityRollingWindow")
-
-  
+  logs: [String!]!
 }
 
 type AvailableLiquidityLogEntry @entity {
@@ -187,7 +254,6 @@ type AvailableLiquidityLogEntry @entity {
   timestamp: BigInt!
   availableLiquidity: BigInt!
   tokenAddress: Bytes!
-  availableLiquidityRollingWindow: RollingAvailableLiquidityForLast24Hour
 }
 
 type HourlyAvailableLiquidity @entity {
@@ -200,9 +266,30 @@ type HourlyAvailableLiquidity @entity {
 
 type RollingAvailableLiquidityForLast24Hour @entity {
   id: ID!
-  timestamp: BigInt!
-  availableiquidity: BigInt!
+  availableLiquidity: BigInt!
   tokenAddress: Bytes!
   count: BigInt!
-  logs: [AvailableLiquidityLogEntry!] @derivedFrom(field: "availableLiquidityRollingWindow")
+  logs: [String!]!
+}
+
+type IncentivePoolBalanceLogEntry @entity {
+  id: ID!
+  tokenAddress: Bytes!
+  timestamp: BigInt!
+  poolBalance: BigInt!
+}
+type HourlyIncentivePoolBalance @entity {
+  id: ID!
+  timestamp: BigInt!
+  tokenAddress: Bytes!
+  poolBalance: BigInt!
+  count: BigInt!
+}
+
+type RollingIncentivePoolBalanceForLast24Hour @entity {
+  id: ID!
+  tokenAddress: Bytes!
+  poolBalance: BigInt!
+  count: BigInt!
+  logs: [String!]!
 }
