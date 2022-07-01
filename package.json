@@ -11,6 +11,8 @@
     "deploy:polygon":  "graph deploy --node https://api.thegraph.com/deploy/ shantanu-bico/hyphenv2-liquidity-pool-polygon",
     "deploy:avalanche":  "graph deploy --node https://api.thegraph.com/deploy/ shantanu-bico/hyphenv2-liquidity-pool-avalanche",
     "deploy:bsc":  "graph deploy --node https://api.thegraph.com/deploy/ shantanu-bico/hyphenv2-liquidity-pool-bsc",
+    "deploy:optimism":  "graph deploy --node https://api.thegraph.com/deploy/ shantanu-bico/hyphenv2-liquidity-pool-optimism",
+    "deploy:arbitrum":  "graph deploy --node https://api.thegraph.com/deploy/ shantanu-bico/hyphenv2-liquidity-pool-arbitrum",
     "create-local": "graph create --node http://localhost:8020/ shantanu-bico/hyphen-v2-liquidity-pool",
     "remove-local": "graph remove --node http://localhost:8020/ shantanu-bico/hyphen-v2-liquidity-pool",
     "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 shantanu-bico/hyphen-v2-liquidity-pool",
@@ -20,7 +22,10 @@
     "prepare:ethereum": "mustache config/ethereum-mainnet.json subgraph.template.yaml > subgraph.yaml",
     "prepare:polygon": "mustache config/polygon-mainnet.json subgraph.template.yaml > subgraph.yaml",
     "prepare:avalanche": "mustache config/avalanche-mainnet.json subgraph.template.yaml > subgraph.yaml",
-    "prepare:bsc":"mustache config/bsc-mainnet.json subgraph.template.yaml > subgraph.yaml"
+    "prepare:bsc":"mustache config/bsc-mainnet.json subgraph.template.yaml > subgraph.yaml",
+    "prepare:optimism":"mustache config/optimism-mainnet.json subgraph.template.yaml > subgraph.yaml",
+    "prepare:arbitrum":"mustache config/arbitrum-mainnet.json subgraph.template.yaml > subgraph.yaml"
+
   },
   "dependencies": {
     "@graphprotocol/graph-cli": "0.26.0",

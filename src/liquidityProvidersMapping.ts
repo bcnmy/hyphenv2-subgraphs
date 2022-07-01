@@ -200,12 +200,16 @@ function calculateApy(firstTokenPriceInLPShares: BigInt, lastTokenPriceInLPShare
   const apyStepOne = firstTokenPriceInLPShares.toBigDecimal().div(
     lastTokenPriceInLPShares.toBigDecimal()
   );
+  log.warning("APY calculation step1 successful", [lastTokenPriceInLPShares.toString()]);
 
   let apyStepTwo = apyStepOne;
 
   for (let i = 1; i < 365; i++) {
     apyStepTwo = apyStepTwo.times(apyStepOne);
   }
+
+  log.warning("APY calculation step2 successfulll", [apyStepTwo.toString()]);
+
 
   return apyStepTwo.minus(BigInt.fromI32(1).toBigDecimal()).times(BigInt.fromI32(100).toBigDecimal());
 }
