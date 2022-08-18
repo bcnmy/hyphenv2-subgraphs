@@ -18,6 +18,7 @@ import {
   Received,
   TrustedForwarderChanged,
   Unpaused,
+  DepositAndSwap
 } from "../generated/LiquidityPool/LiquidityPool";
 
 import {
@@ -47,7 +48,9 @@ import {
   RollingAssetSentForLast24HoursPerChainAndToken,
   HourlyDepositVolumePerChainAndToken,
   HourlyDeposit,
-  HourlyAssetSent
+  HourlyAssetSent,
+  DepositAndSwap as DepositAndSwapEntity,
+  SwapRequest
 } from "../generated/schema";
 
 export function updateAvailableLiquidity(
@@ -872,4 +875,37 @@ export function updateIncentivePoolBalance(
   incentivePoolBalanceRollingWindow.logs = newIncentivePoolBalanceLogs;
   incentivePoolBalanceRollingWindow.save();
   incentivePoolBalanceLogEntry.save();
+}
+
+
+export function handleDepositAndSwap(event: DepositAndSwap): void {
+
+const depositAndSwap = new DepositAndSwapEntity(event.transaction.hash.toHex());
+  depositAndSwap.sender = event.params.from;
+  depositAndSwap.tokenAddress = event.params.tokenAddress;
+  depositAndSwap.receiver = event.params.receiver;
+  depositAndSwap.toChainID = event.params.toChainId;
+  depositAndSwap.rewardAmount = event.params.reward;
+  depositAndSwap.amount = event.params.amount;
+  depositAndSwap.rewardAmountPercent = depositAndSwap.rewardAmount.divDecimal(depositAndSwap.amount.toBigDecimal()).times(BigInt.fromI32(100).toBigDecimal());
+  depositAndSwap.tag = event.params.tag;
+  depositAndSwap.timestamp = event.block.timestamp;
+
+  for (let i = 0; i < event.params.swapRequests.length; i++) {
+  const swapRequest = new SwapRequest(event.transaction.hash.toHex());
+  swapRequest.percentage = event.params.swapRequests[i].percentage.toBigDecimal();
+  swapRequest.tokenAddress  = event.params.swapRequests[i].tokenAddress;
+  swapRequest.amount = event.params.swapRequests[i].amount;
+  swapRequest.path = event.params.swapRequests[i].path;
+  
+    swapRequest.save(); 
+    depositAndSwap.swapRequests.push(swapRequest.percentage.toString());
+    depositAndSwap.swapRequests.push(swapRequest.tokenAddress.toString());
+    depositAndSwap.swapRequests.push(swapRequest.amount.toString());
+    depositAndSwap.swapRequests.push(swapRequest.path.toString());
+
+  }
+
+  depositAndSwap.save()
+
 }
