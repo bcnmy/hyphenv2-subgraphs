@@ -60,6 +60,24 @@ export class AssetSent__Params {
   }
 }
 
+export class BaseGasUpdated extends ethereum.Event {
+  get params(): BaseGasUpdated__Params {
+    return new BaseGasUpdated__Params(this);
+  }
+}
+
+export class BaseGasUpdated__Params {
+  _event: BaseGasUpdated;
+
+  constructor(event: BaseGasUpdated) {
+    this._event = event;
+  }
+
+  get baseGas(): BigInt {
+    return this._event.parameters[0].value.toBigInt();
+  }
+}
+
 export class Deposit extends ethereum.Event {
   get params(): Deposit__Params {
     return new Deposit__Params(this);
@@ -102,6 +120,76 @@ export class Deposit__Params {
   }
 }
 
+export class DepositAndSwap extends ethereum.Event {
+  get params(): DepositAndSwap__Params {
+    return new DepositAndSwap__Params(this);
+  }
+}
+
+export class DepositAndSwap__Params {
+  _event: DepositAndSwap;
+
+  constructor(event: DepositAndSwap) {
+    this._event = event;
+  }
+
+  get from(): Address {
+    return this._event.parameters[0].value.toAddress();
+  }
+
+  get tokenAddress(): Address {
+    return this._event.parameters[1].value.toAddress();
+  }
+
+  get receiver(): Address {
+    return this._event.parameters[2].value.toAddress();
+  }
+
+  get toChainId(): BigInt {
+    return this._event.parameters[3].value.toBigInt();
+  }
+
+  get amount(): BigInt {
+    return this._event.parameters[4].value.toBigInt();
+  }
+
+  get reward(): BigInt {
+    return this._event.parameters[5].value.toBigInt();
+  }
+
+  get tag(): string {
+    return this._event.parameters[6].value.toString();
+  }
+
+  get swapRequests(): Array<DepositAndSwapSwapRequestsStruct> {
+    return this._event.parameters[7].value.toTupleArray<
+      DepositAndSwapSwapRequestsStruct
+    >();
+  }
+}
+
+export class DepositAndSwapSwapRequestsStruct extends ethereum.Tuple {
+  get tokenAddress(): Address {
+    return this[0].toAddress();
+  }
+
+  get percentage(): BigInt {
+    return this[1].toBigInt();
+  }
+
+  get amount(): BigInt {
+    return this[2].toBigInt();
+  }
+
+  get operation(): i32 {
+    return this[3].toI32();
+  }
+
+  get path(): Bytes {
+    return this[4].toBytes();
+  }
+}
+
 export class EthReceived extends ethereum.Event {
   get params(): EthReceived__Params {
     return new EthReceived__Params(this);
@@ -121,6 +209,40 @@ export class EthReceived__Params {
 
   get param1(): BigInt {
     return this._event.parameters[1].value.toBigInt();
+  }
+}
+
+export class GasFeeCalculated extends ethereum.Event {
+  get params(): GasFeeCalculated__Params {
+    return new GasFeeCalculated__Params(this);
+  }
+}
+
+export class GasFeeCalculated__Params {
+  _event: GasFeeCalculated;
+
+  constructor(event: GasFeeCalculated) {
+    this._event = event;
+  }
+
+  get gasUsed(): BigInt {
+    return this._event.parameters[0].value.toBigInt();
+  }
+
+  get gasPrice(): BigInt {
+    return this._event.parameters[1].value.toBigInt();
+  }
+
+  get nativeTokenPriceInTransferredToken(): BigInt {
+    return this._event.parameters[2].value.toBigInt();
+  }
+
+  get tokenGasBaseFee(): BigInt {
+    return this._event.parameters[3].value.toBigInt();
+  }
+
+  get gasFeeInTransferredToken(): BigInt {
+    return this._event.parameters[4].value.toBigInt();
   }
 }
 
@@ -252,6 +374,28 @@ export class Received__Params {
   }
 }
 
+export class SwapAdaptorChanged extends ethereum.Event {
+  get params(): SwapAdaptorChanged__Params {
+    return new SwapAdaptorChanged__Params(this);
+  }
+}
+
+export class SwapAdaptorChanged__Params {
+  _event: SwapAdaptorChanged;
+
+  constructor(event: SwapAdaptorChanged) {
+    this._event = event;
+  }
+
+  get name(): Bytes {
+    return this._event.parameters[0].value.toBytes();
+  }
+
+  get liquidityProvidersAddress(): Address {
+    return this._event.parameters[1].value.toAddress();
+  }
+}
+
 export class TokenManagerChanged extends ethereum.Event {
   get params(): TokenManagerChanged__Params {
     return new TokenManagerChanged__Params(this);
@@ -283,7 +427,7 @@ export class TrustedForwarderChanged__Params {
     this._event = event;
   }
 
-  get forwarderAddress(): Address {
+  get _tf(): Address {
     return this._event.parameters[0].value.toAddress();
   }
 }
@@ -692,6 +836,29 @@ export class LiquidityPool extends ethereum.SmartContract {
     return ethereum.CallResult.fromValue(value[0].toBoolean());
   }
 
+  swapAdaptorMap(param0: string): Address {
+    let result = super.call(
+      "swapAdaptorMap",
+      "swapAdaptorMap(string):(address)",
+      [ethereum.Value.fromString(param0)]
+    );
+
+    return result[0].toAddress();
+  }
+
+  try_swapAdaptorMap(param0: string): ethereum.CallResult<Address> {
+    let result = super.tryCall(
+      "swapAdaptorMap",
+      "swapAdaptorMap(string):(address)",
+      [ethereum.Value.fromString(param0)]
+    );
+    if (result.reverted) {
+      return new ethereum.CallResult();
+    }
+    let value = result.value;
+    return ethereum.CallResult.fromValue(value[0].toAddress());
+  }
+
   tokenManager(): Address {
     let result = super.call("tokenManager", "tokenManager():(address)", []);
 
@@ -735,6 +902,80 @@ export class ChangePauserCall__Outputs {
 
   constructor(call: ChangePauserCall) {
     this._call = call;
+  }
+}
+
+export class DepositAndSwapErc20Call extends ethereum.Call {
+  get inputs(): DepositAndSwapErc20Call__Inputs {
+    return new DepositAndSwapErc20Call__Inputs(this);
+  }
+
+  get outputs(): DepositAndSwapErc20Call__Outputs {
+    return new DepositAndSwapErc20Call__Outputs(this);
+  }
+}
+
+export class DepositAndSwapErc20Call__Inputs {
+  _call: DepositAndSwapErc20Call;
+
+  constructor(call: DepositAndSwapErc20Call) {
+    this._call = call;
+  }
+
+  get tokenAddress(): Address {
+    return this._call.inputValues[0].value.toAddress();
+  }
+
+  get receiver(): Address {
+    return this._call.inputValues[1].value.toAddress();
+  }
+
+  get toChainId(): BigInt {
+    return this._call.inputValues[2].value.toBigInt();
+  }
+
+  get amount(): BigInt {
+    return this._call.inputValues[3].value.toBigInt();
+  }
+
+  get tag(): string {
+    return this._call.inputValues[4].value.toString();
+  }
+
+  get swapRequest(): Array<DepositAndSwapErc20CallSwapRequestStruct> {
+    return this._call.inputValues[5].value.toTupleArray<
+      DepositAndSwapErc20CallSwapRequestStruct
+    >();
+  }
+}
+
+export class DepositAndSwapErc20Call__Outputs {
+  _call: DepositAndSwapErc20Call;
+
+  constructor(call: DepositAndSwapErc20Call) {
+    this._call = call;
+  }
+}
+
+export class DepositAndSwapErc20CallSwapRequestStruct extends ethereum.Tuple {
+  get tokenAddress(): Address {
+    return this[0].toAddress();
+  }
+
+  get percentage(): BigInt {
+    return this[1].toBigInt();
+  }
+
+  get amount(): BigInt {
+    return this[2].toBigInt();
+  }
+
+  get operation(): i32 {
+    return this[3].toI32();
+  }
+
+  get path(): Bytes {
+    return this[4].toBytes();
   }
 }
 
@@ -819,6 +1060,72 @@ export class DepositNativeCall__Outputs {
 
   constructor(call: DepositNativeCall) {
     this._call = call;
+  }
+}
+
+export class DepositNativeAndSwapCall extends ethereum.Call {
+  get inputs(): DepositNativeAndSwapCall__Inputs {
+    return new DepositNativeAndSwapCall__Inputs(this);
+  }
+
+  get outputs(): DepositNativeAndSwapCall__Outputs {
+    return new DepositNativeAndSwapCall__Outputs(this);
+  }
+}
+
+export class DepositNativeAndSwapCall__Inputs {
+  _call: DepositNativeAndSwapCall;
+
+  constructor(call: DepositNativeAndSwapCall) {
+    this._call = call;
+  }
+
+  get receiver(): Address {
+    return this._call.inputValues[0].value.toAddress();
+  }
+
+  get toChainId(): BigInt {
+    return this._call.inputValues[1].value.toBigInt();
+  }
+
+  get tag(): string {
+    return this._call.inputValues[2].value.toString();
+  }
+
+  get swapRequest(): Array<DepositNativeAndSwapCallSwapRequestStruct> {
+    return this._call.inputValues[3].value.toTupleArray<
+      DepositNativeAndSwapCallSwapRequestStruct
+    >();
+  }
+}
+
+export class DepositNativeAndSwapCall__Outputs {
+  _call: DepositNativeAndSwapCall;
+
+  constructor(call: DepositNativeAndSwapCall) {
+    this._call = call;
+  }
+}
+
+export class DepositNativeAndSwapCallSwapRequestStruct extends ethereum.Tuple {
+  get tokenAddress(): Address {
+    return this[0].toAddress();
+  }
+
+  get percentage(): BigInt {
+    return this[1].toBigInt();
+  }
+
+  get amount(): BigInt {
+    return this[2].toBigInt();
+  }
+
+  get operation(): i32 {
+    return this[3].toI32();
+  }
+
+  get path(): Bytes {
+    return this[4].toBytes();
   }
 }
 
@@ -1152,6 +1459,60 @@ export class SendFundsToUserCall__Outputs {
   }
 }
 
+export class SendFundsToUserV2Call extends ethereum.Call {
+  get inputs(): SendFundsToUserV2Call__Inputs {
+    return new SendFundsToUserV2Call__Inputs(this);
+  }
+
+  get outputs(): SendFundsToUserV2Call__Outputs {
+    return new SendFundsToUserV2Call__Outputs(this);
+  }
+}
+
+export class SendFundsToUserV2Call__Inputs {
+  _call: SendFundsToUserV2Call;
+
+  constructor(call: SendFundsToUserV2Call) {
+    this._call = call;
+  }
+
+  get tokenAddress(): Address {
+    return this._call.inputValues[0].value.toAddress();
+  }
+
+  get amount(): BigInt {
+    return this._call.inputValues[1].value.toBigInt();
+  }
+
+  get receiver(): Address {
+    return this._call.inputValues[2].value.toAddress();
+  }
+
+  get depositHash(): Bytes {
+    return this._call.inputValues[3].value.toBytes();
+  }
+
+  get nativeTokenPriceInTransferredToken(): BigInt {
+    return this._call.inputValues[4].value.toBigInt();
+  }
+
+  get fromChainId(): BigInt {
+    return this._call.inputValues[5].value.toBigInt();
+  }
+
+  get tokenGasBaseFee(): BigInt {
+    return this._call.inputValues[6].value.toBigInt();
+  }
+}
+
+export class SendFundsToUserV2Call__Outputs {
+  _call: SendFundsToUserV2Call;
+
+  constructor(call: SendFundsToUserV2Call) {
+    this._call = call;
+  }
+}
+
 export class SetBaseGasCall extends ethereum.Call {
   get inputs(): SetBaseGasCall__Inputs {
     return new SetBaseGasCall__Inputs(this);
@@ -1242,6 +1603,40 @@ export class SetLiquidityProvidersCall__Outputs {
   }
 }
 
+export class SetSwapAdaptorCall extends ethereum.Call {
+  get inputs(): SetSwapAdaptorCall__Inputs {
+    return new SetSwapAdaptorCall__Inputs(this);
+  }
+
+  get outputs(): SetSwapAdaptorCall__Outputs {
+    return new SetSwapAdaptorCall__Outputs(this);
+  }
+}
+
+export class SetSwapAdaptorCall__Inputs {
+  _call: SetSwapAdaptorCall;
+
+  constructor(call: SetSwapAdaptorCall) {
+    this._call = call;
+  }
+
+  get name(): string {
+    return this._call.inputValues[0].value.toString();
+  }
+
+  get _swapAdaptor(): Address {
+    return this._call.inputValues[1].value.toAddress();
+  }
+}
+
+export class SetSwapAdaptorCall__Outputs {
+  _call: SetSwapAdaptorCall;
+
+  constructor(call: SetSwapAdaptorCall) {
+    this._call = call;
+  }
+}
+
 export class SetTokenManagerCall extends ethereum.Call {
   get inputs(): SetTokenManagerCall__Inputs {
     return new SetTokenManagerCall__Inputs(this);
@@ -1299,6 +1694,96 @@ export class SetTrustedForwarderCall__Outputs {
 
   constructor(call: SetTrustedForwarderCall) {
     this._call = call;
+  }
+}
+
+export class SwapAndSendFundsToUserCall extends ethereum.Call {
+  get inputs(): SwapAndSendFundsToUserCall__Inputs {
+    return new SwapAndSendFundsToUserCall__Inputs(this);
+  }
+
+  get outputs(): SwapAndSendFundsToUserCall__Outputs {
+    return new SwapAndSendFundsToUserCall__Outputs(this);
+  }
+}
+
+export class SwapAndSendFundsToUserCall__Inputs {
+  _call: SwapAndSendFundsToUserCall;
+
+  constructor(call: SwapAndSendFundsToUserCall) {
+    this._call = call;
+  }
+
+  get tokenAddress(): Address {
+    return this._call.inputValues[0].value.toAddress();
+  }
+
+  get amount(): BigInt {
+    return this._call.inputValues[1].value.toBigInt();
+  }
+
+  get receiver(): Address {
+    return this._call.inputValues[2].value.toAddress();
+  }
+
+  get depositHash(): Bytes {
+    return this._call.inputValues[3].value.toBytes();
+  }
+
+  get nativeTokenPriceInTransferredToken(): BigInt {
+    return this._call.inputValues[4].value.toBigInt();
+  }
+
+  get tokenGasBaseFee(): BigInt {
+    return this._call.inputValues[5].value.toBigInt();
+  }
+
+  get fromChainId(): BigInt {
+    return this._call.inputValues[6].value.toBigInt();
+  }
+
+  get swapGasOverhead(): BigInt {
+    return this._call.inputValues[7].value.toBigInt();
+  }
+
+  get swapRequests(): Array<SwapAndSendFundsToUserCallSwapRequestsStruct> {
+    return this._call.inputValues[8].value.toTupleArray<
+      SwapAndSendFundsToUserCallSwapRequestsStruct
+    >();
+  }
+
+  get swapAdaptor(): string {
+    return this._call.inputValues[9].value.toString();
+  }
+}
+
+export class SwapAndSendFundsToUserCall__Outputs {
+  _call: SwapAndSendFundsToUserCall;
+
+  constructor(call: SwapAndSendFundsToUserCall) {
+    this._call = call;
+  }
+}
+
+export class SwapAndSendFundsToUserCallSwapRequestsStruct extends ethereum.Tuple {
+  get tokenAddress(): Address {
+    return this[0].toAddress();
+  }
+
+  get percentage(): BigInt {
+    return this[1].toBigInt();
+  }
+
+  get amount(): BigInt {
+    return this[2].toBigInt();
+  }
+
+  get operation(): i32 {
+    return this[3].toI32();
+  }
+
+  get path(): Bytes {
+    return this[4].toBytes();
   }
 }
 

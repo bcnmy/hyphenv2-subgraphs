@@ -293,3 +293,26 @@ type RollingIncentivePoolBalanceForLast24Hour @entity {
   count: BigInt!
   logs: [String!]!
 }
+
+type DepositAndSwap @entity {
+  id: ID!
+  sender: Bytes!
+  receiver: Bytes!
+  tokenAddress: Bytes!
+  toChainID: BigInt!
+  amount: BigInt!
+  rewardAmount: BigInt!
+  rewardAmountPercent: BigDecimal!
+  tag: String!
+  timestamp: BigInt!
+  swapRequests: [SwapRequest!]!
+}
+
+type SwapRequest @entity {
+  id: ID!
+  tokenAddress: Bytes!
+  percentage: BigDecimal!
+  amount: BigInt!
+  path: Bytes!
+  timestamp: BigInt!
+}

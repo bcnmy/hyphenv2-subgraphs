@@ -12,6 +12,7 @@
     "deploy:avalanche":  "graph deploy --node https://api.thegraph.com/deploy/ shantanu-bico/hyphenv2-liquidity-pool-avalanche",
     "deploy:bsc":  "graph deploy --node https://api.thegraph.com/deploy/ shantanu-bico/hyphenv2-liquidity-pool-bsc",
     "deploy:optimism":  "graph deploy --node https://api.thegraph.com/deploy/ shantanu-bico/hyphenv2-liquidity-pool-optimism",
+    "deploy:optimism-kovan":  "graph deploy --node https://api.thegraph.com/deploy/ shantanu-bico/hyphenv2-optimism-kovan",
     "deploy:arbitrum":  "graph deploy --node https://api.thegraph.com/deploy/ shantanu-bico/hyphenv2-liquidity-pool-arbitrum",
     "deploy:fantom":  "graph deploy --node https://api.thegraph.com/deploy/ shantanu-bico/hyphenv2-liquidity-pool-fantom",
     "create-local": "graph create --node http://localhost:8020/ shantanu-bico/hyphen-v2-liquidity-pool",
@@ -25,6 +26,7 @@
     "prepare:avalanche": "mustache config/avalanche-mainnet.json subgraph.template.yaml > subgraph.yaml",
     "prepare:bsc":"mustache config/bsc-mainnet.json subgraph.template.yaml > subgraph.yaml",
     "prepare:optimism":"mustache config/optimism-mainnet.json subgraph.template.yaml > subgraph.yaml",
+    "prepare:optimism-kovan":"mustache config/optimism-kovan.json subgraph.template.yaml > subgraph.yaml",
     "prepare:arbitrum":"mustache config/arbitrum-mainnet.json subgraph.template.yaml > subgraph.yaml",
     "prepare:fantom":"mustache config/fantom-mainnet.json subgraph.template.yaml > subgraph.yaml"
 

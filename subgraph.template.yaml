@@ -34,6 +34,8 @@ dataSources:
           handler: handleAssetSent
         - event: Deposit(indexed address,indexed address,indexed address,uint256,uint256,uint256,string)
           handler: handleDeposit
+        - event: DepositAndSwap(indexed address,indexed address,indexed address,uint256,uint256,uint256,string,(address,uint256,uint256,uint8,bytes)[])
+          handler: handleDepositAndSwap
         # - event: EthReceived(address,uint256)
         # handler: handleEthReceived
         # - event: FeeDetails(indexed uint256,indexed uint256,indexed uint256,address)
