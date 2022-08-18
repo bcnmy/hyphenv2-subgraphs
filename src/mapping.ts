@@ -890,6 +890,7 @@ const depositAndSwap = new DepositAndSwapEntity(event.transaction.hash.toHex());
   depositAndSwap.rewardAmountPercent = depositAndSwap.rewardAmount.divDecimal(depositAndSwap.amount.toBigDecimal()).times(BigInt.fromI32(100).toBigDecimal());
   depositAndSwap.tag = event.params.tag;
   depositAndSwap.timestamp = event.block.timestamp;
+  depositAndSwap.swapRequests = [];
 
   for (let i = 0; i < event.params.swapRequests.length; i++) {
   const swapRequest = new SwapRequest(event.transaction.hash.toHex());

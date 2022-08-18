@@ -2622,6 +2622,7 @@ export class DepositAndSwap extends Entity {
     this.set("rewardAmountPercent", Value.fromBigDecimal(BigDecimal.zero()));
     this.set("tag", Value.fromString(""));
     this.set("timestamp", Value.fromBigInt(BigInt.zero()));
+    this.set("swapRequests", Value.fromStringArray(new Array(0)));
   }
 
   save(): void {
@@ -2729,6 +2730,15 @@ export class DepositAndSwap extends Entity {
 
   set timestamp(value: BigInt) {
     this.set("timestamp", Value.fromBigInt(value));
+  }
+
+  get swapRequests(): Array<string> {
+    let value = this.get("swapRequests");
+    return value!.toStringArray();
+  }
+
+  set swapRequests(value: Array<string>) {
+    this.set("swapRequests", Value.fromStringArray(value));
   }
 }
 
