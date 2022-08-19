@@ -305,14 +305,13 @@ type DepositAndSwap @entity {
   rewardAmountPercent: BigDecimal!
   tag: String!
   timestamp: BigInt!
-  swapRequests: [SwapRequest!]!
 }
 
-type SwapRequest @entity {
-  id: ID!
-  tokenAddress: Bytes!
-  percentage: BigDecimal!
-  amount: BigInt!
-  path: Bytes!
-  timestamp: BigInt!
-}
+# type SwapRequest @entity {
+#   id: ID!
+#   tokenAddress: Bytes!
+#   percentage: BigDecimal!
+#   amount: BigInt!
+#   path: Bytes!
+#   timestamp: BigInt!
+# }

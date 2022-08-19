@@ -2622,7 +2622,6 @@ export class DepositAndSwap extends Entity {
     this.set("rewardAmountPercent", Value.fromBigDecimal(BigDecimal.zero()));
     this.set("tag", Value.fromString(""));
     this.set("timestamp", Value.fromBigInt(BigInt.zero()));
-    this.set("swapRequests", Value.fromStringArray(new Array(0)));
   }
 
   save(): void {
@@ -2721,99 +2720,6 @@ export class DepositAndSwap extends Entity {
 
   set tag(value: string) {
     this.set("tag", Value.fromString(value));
-  }
-
-  get timestamp(): BigInt {
-    let value = this.get("timestamp");
-    return value!.toBigInt();
-  }
-
-  set timestamp(value: BigInt) {
-    this.set("timestamp", Value.fromBigInt(value));
-  }
-
-  get swapRequests(): Array<string> {
-    let value = this.get("swapRequests");
-    return value!.toStringArray();
-  }
-
-  set swapRequests(value: Array<string>) {
-    this.set("swapRequests", Value.fromStringArray(value));
-  }
-}
-
-export class SwapRequest extends Entity {
-  constructor(id: string) {
-    super();
-    this.set("id", Value.fromString(id));
-
-    this.set("tokenAddress", Value.fromBytes(Bytes.empty()));
-    this.set("percentage", Value.fromBigDecimal(BigDecimal.zero()));
-    this.set("amount", Value.fromBigInt(BigInt.zero()));
-    this.set("path", Value.fromBytes(Bytes.empty()));
-    this.set("timestamp", Value.fromBigInt(BigInt.zero()));
-  }
-
-  save(): void {
-    let id = this.get("id");
-    assert(id != null, "Cannot save SwapRequest entity without an ID");
-    if (id) {
-      assert(
-        id.kind == ValueKind.STRING,
-        "Cannot save SwapRequest entity with non-string ID. " +
-          'Considering using .toHex() to convert the "id" to a string.'
-      );
-      store.set("SwapRequest", id.toString(), this);
-    }
-  }
-
-  static load(id: string): SwapRequest | null {
-    return changetype<SwapRequest | null>(store.get("SwapRequest", id));
-  }
-
-  get id(): string {
-    let value = this.get("id");
-    return value!.toString();
-  }
-
-  set id(value: string) {
-    this.set("id", Value.fromString(value));
-  }
-
-  get tokenAddress(): Bytes {
-    let value = this.get("tokenAddress");
-    return value!.toBytes();
-  }
-
-  set tokenAddress(value: Bytes) {
-    this.set("tokenAddress", Value.fromBytes(value));
-  }
-
-  get percentage(): BigDecimal {
-    let value = this.get("percentage");
-    return value!.toBigDecimal();
-  }
-
-  set percentage(value: BigDecimal) {
-    this.set("percentage", Value.fromBigDecimal(value));
-  }
-
-  get amount(): BigInt {
-    let value = this.get("amount");
-    return value!.toBigInt();
-  }
-
-  set amount(value: BigInt) {
-    this.set("amount", Value.fromBigInt(value));
-  }
-
-  get path(): Bytes {
-    let value = this.get("path");
-    return value!.toBytes();
-  }
-
-  set path(value: Bytes) {
-    this.set("path", Value.fromBytes(value));
   }
 
   get timestamp(): BigInt {
